@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import './screens/auth/registration_screen.dart';
+import './screens/auth/email_login_screen.dart';
+import './screens/auth/otp_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +22,12 @@ class MyApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const RegistrationScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const RegistrationScreen(),
+        '/email_login': (context) => const EmailLoginScreen(),
+        '/otp': (context) => const OTPScreen(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

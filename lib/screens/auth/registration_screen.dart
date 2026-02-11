@@ -1,4 +1,3 @@
-// lib/screens/auth/registration_screen.dart
 import 'package:flutter/material.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -10,6 +9,33 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController controller = TextEditingController();
+  bool isLoading = false;
+
+  void _loginWithOTP() {
+    // Add validation
+    if (controller.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter phone number')),
+      );
+      return;
+    }
+
+    if (controller.text.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid 10-digit number')),
+      );
+      return;
+    }
+
+    // Navigate to OTP screen
+    Navigator.pushNamed(context, '/otp');
+  }
+
+  void _loginWithGmail() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Google Sign-In coming soon')));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +54,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // PALITAN IMAGE
-                      Icon(
+                      // Using Icon temporarily
+                      const Icon(
                         Icons.local_shipping,
                         size: 80,
                         color: Color(0xFF5D8AA8),
@@ -83,7 +109,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: isLoading ? null : _loginWithOTP,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF5D8AA8),
                       foregroundColor: Colors.white,
@@ -92,13 +118,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Continue'),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Continue'),
                   ),
                 ),
                 const SizedBox(height: 24),
                 Center(
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/email_login');
+                    },
                     child: const Text(
                       'Login with Email',
                       style: TextStyle(
@@ -111,7 +141,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 const SizedBox(height: 24),
                 Center(
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: _loginWithGmail,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: const BorderSide(color: Colors.grey),
@@ -120,12 +150,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                       foregroundColor: const Color(0xFF2F4F4F),
                     ),
-                    // REPLACE Image.asset with Icon for testing
-                    icon: Icon(
-                      Icons.g_mobiledata,
-                      size: 20,
-                      color: Color(0xFF2F4F4F),
-                    ),
+                    icon: const Icon(Icons.g_mobiledata, size: 20),
                     label: const Text('Sign in with Google'),
                   ),
                 ),
