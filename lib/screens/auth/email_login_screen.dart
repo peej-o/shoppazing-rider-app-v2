@@ -38,7 +38,9 @@ class EmailLoginScreen extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                // Will add later
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Email login coming soon')),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5D8AA8),
@@ -49,6 +51,7 @@ class EmailLoginScreen extends StatelessWidget {
               ),
               child: const Text('Login'),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

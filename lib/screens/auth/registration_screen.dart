@@ -27,8 +27,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       return;
     }
 
-    // Navigate to OTP screen
-    Navigator.pushNamed(context, '/otp');
+    // Show loading
+    setState(() {
+      isLoading = true;
+    });
+
+    // Simulate API call
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        isLoading = false;
+      });
+      // Navigate to OTP screen
+      Navigator.pushNamed(context, '/otp');
+    });
   }
 
   void _loginWithGmail() {

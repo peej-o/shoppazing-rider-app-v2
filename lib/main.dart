@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import './screens/auth/registration_screen.dart';
 import './screens/auth/email_login_screen.dart';
 import './screens/auth/otp_screen.dart';
+import './screens/main_flow/root_navigator.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const RegistrationScreen(),
         '/email_login': (context) => const EmailLoginScreen(),
         '/otp': (context) => const OTPScreen(),
+        '/home': (context) => const RootNavigator(),
       },
       debugShowCheckedModeBanner: false,
     );
