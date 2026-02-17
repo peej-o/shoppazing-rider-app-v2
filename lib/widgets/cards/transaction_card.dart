@@ -1,4 +1,3 @@
-// FILE: lib/widgets/cards/transaction_card.dart
 import 'package:flutter/material.dart';
 
 class TransactionCard extends StatelessWidget {
@@ -34,9 +33,7 @@ class TransactionCard extends StatelessWidget {
       child: Card(
         elevation: isPending ? 4 : 3,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
@@ -100,12 +97,15 @@ class TransactionCard extends StatelessWidget {
                         ],
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: confirmationColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: confirmationColor.withOpacity(0.3)),
+                              color: confirmationColor.withOpacity(0.3),
+                            ),
                           ),
                           child: Text(
                             confirmationText,
@@ -126,8 +126,10 @@ class TransactionCard extends StatelessWidget {
                 // Amount
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF5D8AA8).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),

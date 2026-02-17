@@ -1,4 +1,3 @@
-// FILE: lib/widgets/cards/settings_tile.dart
 import 'package:flutter/material.dart';
 
 class SettingsTile extends StatelessWidget {
@@ -36,12 +35,10 @@ class SettingsTile extends StatelessWidget {
           ),
           title: Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 15,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
           ),
-          trailing: trailing ??
+          trailing:
+              trailing ??
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(

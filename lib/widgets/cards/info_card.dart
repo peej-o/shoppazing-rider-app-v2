@@ -1,4 +1,3 @@
-// FILE: lib/widgets/cards/info_card.dart
 import 'package:flutter/material.dart';
 
 class InfoCard extends StatelessWidget {
@@ -18,9 +17,7 @@ class InfoCard extends StatelessWidget {
     return Card(
       elevation: 2,
       shadowColor: Colors.grey.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -39,11 +36,7 @@ class InfoCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: const Color(0xFF5D8AA8),
-                    size: 20,
-                  ),
+                  Icon(icon, color: const Color(0xFF5D8AA8), size: 20),
                   const SizedBox(width: 8),
                 ],
                 Text(

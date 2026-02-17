@@ -1,4 +1,3 @@
-// FILE: lib/widgets/cards/info_row.dart
 import 'package:flutter/material.dart';
 
 class InfoRow extends StatelessWidget {
@@ -41,9 +40,7 @@ class InfoRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.grey.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.grey.withOpacity(0.1),
-                ),
+                border: Border.all(color: Colors.grey.withOpacity(0.1)),
               ),
               child: Text(
                 value,
