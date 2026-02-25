@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import './screens/auth/registration_screen.dart';
 import './screens/auth/email_login_screen.dart';
 import './screens/auth/otp_screen.dart';
 import './screens/main_flow/root_navigator.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Important ito!
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
   runApp(const MyApp());
 }
 
