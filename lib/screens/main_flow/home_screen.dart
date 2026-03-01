@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/entities/order.dart';  // Gamitin ang OrderData model
+import '../../widgets/cards/order_card.dart';  // Gamitin ang OrderCard widget
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,32 +13,50 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Mock data for testing
-  final List<Map<String, dynamic>> _mockOrders = [
-    {
-      'orderNumber': '12345',
-      'storeName': 'Mang Inasal',
-      'storeAddress': 'SM Mall, Manila',
-      'customerName': 'Juan Dela Cruz',
-      'customerAddress': '123 Main St, Manila',
-      'customerPhone': '09123456789',
-      'orderTime': '14:30',
-      'deliveryFee': 50.0,
-      'subTotal': 350.0,
-      'status': '1',
-    },
-    {
-      'orderNumber': '67890',
-      'storeName': 'Jollibee',
-      'storeAddress': 'Gateway Mall, Quezon City',
-      'customerName': 'Maria Santos',
-      'customerAddress': '456 Elm St, Quezon City',
-      'customerPhone': '09876543210',
-      'orderTime': '15:45',
-      'deliveryFee': 65.0,
-      'subTotal': 420.0,
-      'status': '3',
-    },
+  // Mock data for testing - gamitin ang OrderData model
+  final List<OrderData> _mockOrders = [
+    OrderData(
+      serverHeaderId: 12345,
+      orderNumber: '12345',
+      status: '1',  // Pending
+      dateTimeCreated: '14:30',
+      storeName: 'Mang Inasal',
+      storeImageUrl: '',
+      storeAddress: 'SM Mall, Manila',
+      customerName: 'Juan Dela Cruz',
+      customerAddress: '123 Main St, Manila',
+      customerMobileNo: '09123456789',
+      storeLat: 14.5995,
+      storeLng: 120.9842,
+      customerLat: 14.5895,
+      customerLng: 120.9942,
+      deliveryFee: 50.0,
+      onlineServiceCharge: 15.0,
+      subTotal: 350.0,
+      totalDue: '415.00',
+      rawDetails: [],
+    ),
+    OrderData(
+      serverHeaderId: 67890,
+      orderNumber: '67890',
+      status: '3',  // Preparing
+      dateTimeCreated: '15:45',
+      storeName: 'Jollibee',
+      storeImageUrl: '',
+      storeAddress: 'Gateway Mall, Quezon City',
+      customerName: 'Maria Santos',
+      customerAddress: '456 Elm St, Quezon City',
+      customerMobileNo: '09876543210',
+      storeLat: 14.6095,
+      storeLng: 121.0242,
+      customerLat: 14.6195,
+      customerLng: 121.0342,
+      deliveryFee: 65.0,
+      onlineServiceCharge: 20.0,
+      subTotal: 420.0,
+      totalDue: '505.00',
+      rawDetails: [],
+    ),
   ];
 
   @override
@@ -49,49 +69,6 @@ class _HomeScreenState extends State<HomeScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  String getStatusLabel(String statusId) {
-    switch (statusId) {
-      case '1':
-        return 'Pending';
-      case '2':
-        return 'Confirmed';
-      case '3':
-        return 'Preparing';
-      case '4':
-        return 'Ready';
-      case '6':
-        return 'In Transit';
-      case '7':
-        return 'Delivered';
-      case '8':
-        return 'Cancelled';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  Color getStatusColor(String statusId) {
-    switch (statusId) {
-      case '1':
-      case '2':
-        return Colors.blue;
-      case '3':
-      case '4':
-        return Colors.orange;
-      case '6':
-      case '7':
-        return Colors.green;
-      case '8':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String formatCurrency(double amount) {
-    return '₱${amount.toStringAsFixed(2)}';
   }
 
   @override
@@ -114,9 +91,17 @@ class _HomeScreenState extends State<HomeScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildOrdersList(_mockOrders),
-                _buildEmptyState('No cancelled orders'),
-                _buildEmptyState('No completed orders'),
+                _buildOrdersList(
+                  _mockOrders.where((o) => o.status != '7' && o.status != '8').toList()
+                ),
+                _buildOrdersList(
+                  _mockOrders.where((o) => o.status == '8').toList(),
+                  showAccept: false,
+                ),
+                _buildOrdersList(
+                  _mockOrders.where((o) => o.status == '7').toList(),
+                  showAccept: false,
+                ),
               ],
             ),
           ),
@@ -125,9 +110,21 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildOrdersList(List<Map<String, dynamic>> orders) {
+  Widget _buildOrdersList(List<OrderData> orders, {bool showAccept = true}) {
     if (orders.isEmpty) {
-      return _buildEmptyState('No active orders');
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              showAccept ? 'No active orders' : 'No orders found',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
@@ -135,214 +132,37 @@ class _HomeScreenState extends State<HomeScreen>
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
-        return _buildOrderCard(order);
+        return OrderCard(
+          orderNumber: order.orderNumber,
+          pickup: order.storeName,
+          dropoff: order.customerAddress,
+          orderTime: order.dateTimeCreated,
+          storeImageUrl: order.storeImageUrl,
+          deliveryFee: order.deliveryFee,
+          subTotal: order.subTotal,
+          showAccept: showAccept && order.status != '8' && order.status != '7',
+          isAccepting: false,
+          orderStatusId: order.status,
+          storeAddress: order.storeAddress,
+          customerName: order.customerName,
+          customerAddress: order.customerAddress,
+          customerMobileNo: order.customerMobileNo,
+          storeLat: order.storeLat,
+          storeLng: order.storeLng,
+          customerLat: order.customerLat,
+          customerLng: order.customerLng,
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Order ${order.orderNumber} tapped (demo)')),
+            );
+          },
+          onAccept: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Accepting order ${order.orderNumber} (demo)')),
+            );
+          },
+        );
       },
-    );
-  }
-
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFF5D8AA8),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  'Order #${order['orderNumber']}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: getStatusColor(order['status']).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    getStatusLabel(order['status']),
-                    style: TextStyle(
-                      color: getStatusColor(order['status']),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.store, color: Color(0xFF5D8AA8)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            order['storeName'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  order['storeAddress'],
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.home, color: Color(0xFF5D8AA8), size: 28),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            order['customerName'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  order['customerAddress'],
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.phone,
-                                size: 14,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                order['customerPhone'],
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Text(
-                      'Delivery Fee: ',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    Text(
-                      formatCurrency(order['deliveryFee']),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 20),
-                    const Text(
-                      'Subtotal: ',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    Text(
-                      formatCurrency(order['subTotal']),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-        ],
-      ),
     );
   }
 }
