@@ -65,16 +65,20 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen> {
       print('[DEBUG] User exists, sending OTP');
       final success = await AuthService.requestOTP(phoneNumber);
 
+      print('[DEBUG] requestOTP success: $success'); // Add this
+
       if (!mounted) return;
 
       if (success) {
-        // Navigate to OTP screen
+        print('[DEBUG] Success, navigating to OTP screen'); // Add this
         Navigator.pushNamed(
           context,
           '/otp',
           arguments: {'phoneNumber': phoneNumber},
         );
+        print('[DEBUG] Navigation called'); // Add this
       } else {
+        print('[DEBUG] Failed to send OTP'); // Add this
         _showError('Failed to send OTP. Please try again.');
       }
     } catch (e) {
