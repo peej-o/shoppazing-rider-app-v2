@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/entities/order.dart';  // Gamitin ang OrderData model
-import '../../widgets/cards/order_card.dart';  // Gamitin ang OrderCard widget
+import '../../models/entities/order.dart';
+import '../../widgets/cards/order_card.dart';
+import '../../widgets/common/balance_warning_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,9 +17,9 @@ class _HomeScreenState extends State<HomeScreen>
   // Mock data for testing - gamitin ang OrderData model
   final List<OrderData> _mockOrders = [
     OrderData(
-      serverHeaderId: 12345,
-      orderNumber: '12345',
-      status: '1',  // Pending
+      serverHeaderId: 123451,
+      orderNumber: '123451',
+      status: '1', // Pending
       dateTimeCreated: '14:30',
       storeName: 'Mang Inasal',
       storeImageUrl: '',
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen>
     OrderData(
       serverHeaderId: 67890,
       orderNumber: '67890',
-      status: '3',  // Preparing
+      status: '3', // Preparing
       dateTimeCreated: '15:45',
       storeName: 'Jollibee',
       storeImageUrl: '',
@@ -76,6 +77,13 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       body: Column(
         children: [
+          BalanceWarningBanner(
+            balance: 50.0, // Mock low balance
+            onTap: () {
+              // TODO: Navigate to dashboard top-up
+            },
+          ),
+
           TabBar(
             controller: _tabController,
             labelColor: const Color(0xFF5D8AA8),
@@ -92,7 +100,9 @@ class _HomeScreenState extends State<HomeScreen>
               controller: _tabController,
               children: [
                 _buildOrdersList(
-                  _mockOrders.where((o) => o.status != '7' && o.status != '8').toList()
+                  _mockOrders
+                      .where((o) => o.status != '7' && o.status != '8')
+                      .toList(),
                 ),
                 _buildOrdersList(
                   _mockOrders.where((o) => o.status == '8').toList(),
@@ -153,12 +163,16 @@ class _HomeScreenState extends State<HomeScreen>
           customerLng: order.customerLng,
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Order ${order.orderNumber} tapped (demo)')),
+              SnackBar(
+                content: Text('Order ${order.orderNumber} tapped (demo)'),
+              ),
             );
           },
           onAccept: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Accepting order ${order.orderNumber} (demo)')),
+              SnackBar(
+                content: Text('Accepting order ${order.orderNumber} (demo)'),
+              ),
             );
           },
         );

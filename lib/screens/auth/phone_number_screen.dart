@@ -1,111 +1,105 @@
 import 'package:flutter/material.dart';
-import '/services/google_signin_service.dart';
+import '../../services/auth/auth_service.dart';
+import '../../services/network/network_service.dart';
 
-class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({super.key});
+class PhoneNumberScreen extends StatefulWidget {
+  const PhoneNumberScreen({super.key});
 
   @override
-  State<RegistrationScreen> createState() => _RegistrationScreenState();
+  State<PhoneNumberScreen> createState() => _PhoneNumberScreen();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
-  final TextEditingController controller = TextEditingController();
-  bool isLoading = false;
+class _PhoneNumberScreen extends State<PhoneNumberScreen> {
+  final TextEditingController _phoneController = TextEditingController();
+  bool _isLoading = false;
 
-  void _loginWithOTP() {
-    final phoneNumber = controller.text.trim();
-
-    // Check if empty
-    if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your phone number')),
-      );
-      return;
-    }
-
-    // Check if starts with 9 AND is exactly 10 digits
-    if (!phoneNumber.startsWith('9') || phoneNumber.length != 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Phone number must start with 9 and be 10 digits long'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    // Format the number for API (add 63 prefix)
-    final formattedPhoneNumber = '+63$phoneNumber';
-
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        isLoading = false;
-      });
-
-      // Navigate to OTP screen WITH the phone number
-      Navigator.pushNamed(
-        context,
-        '/otp',
-        arguments: {'mobileNo': formattedPhoneNumber}, // <- Important ito!
-      );
-    });
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
   }
 
-  void _loginWithGmail() async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> _loginWithOTP() async {
+    final phoneNumber = _phoneController.text.trim();
+
+    // Validate
+    if (phoneNumber.isEmpty) {
+      _showError('Please enter your phone number');
+      return;
+    }
+
+    if (!phoneNumber.startsWith('9') || phoneNumber.length != 10) {
+      _showError('Phone number must start with 9 and be 10 digits long');
+      return;
+    }
+
+    // Check internet
+    final hasConnection = await NetworkService.hasInternetConnection();
+    if (!hasConnection) {
+      NetworkService.showNetworkErrorSnackBar(context);
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
-      final googleService = GoogleSignInService();
-      final result = await googleService.signInWithGoogle();
+      // STEP 1: Check if user exists first
+      print('[DEBUG] Checking if user exists: $phoneNumber');
+      final userExists = await AuthService.checkUserExists(phoneNumber);
 
-      setState(() {
-        isLoading = false;
-      });
+      if (!mounted) return;
 
-      if (result.success) {
-        // Success! May user data na tayo
-        print('Google Sign-In Success!');
-        print('Email: ${result.userData?.email}');
-        print('Name: ${result.userData?.displayName}');
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google Sign-In successful!'),
-            backgroundColor: Colors.green,
-          ),
+      if (!userExists) {
+        // User not found, go to registration
+        print('[DEBUG] User not found, go to registration');
+        setState(() => _isLoading = false);
+        Navigator.pushNamed(
+          context,
+          '/register',
+          arguments: {'phoneNumber': phoneNumber},
         );
+        return;
+      }
 
-        // Navigate to home or registration kung incomplete profile
-        // For now, diretso muna sa home
-        Navigator.pushReplacementNamed(context, '/home');
+      // STEP 2: User exists, send OTP
+      print('[DEBUG] User exists, sending OTP');
+      final success = await AuthService.requestOTP(phoneNumber);
+
+      if (!mounted) return;
+
+      if (success) {
+        // Navigate to OTP screen
+        Navigator.pushNamed(
+          context,
+          '/otp',
+          arguments: {'phoneNumber': phoneNumber},
+        );
       } else {
-        // May error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Google Sign-In failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showError('Failed to send OTP. Please try again.');
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError('Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  void _loginWithGmail() {
+    // TODO: Implement Google Sign-In
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Google Sign-In coming soon'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -121,15 +115,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
+
+                // Logo
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Image.asset(
-                        'assets/shoppazing_logo.jpg', // Using the root assets file
+                        'assets/shoppazing_logo.jpg',
                         height: 80,
                         errorBuilder: (context, error, stackTrace) {
-                          // If image fails, show the icon as fallback
                           return const Icon(
                             Icons.local_shipping,
                             size: 80,
@@ -137,8 +132,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           );
                         },
                       ),
-
-                      // Replace with:
                       const SizedBox(height: 16),
                       const Text(
                         'Shoppazing Rider App',
@@ -155,7 +148,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 40),
+
+                // Title
                 const Text(
                   'Enter your phone number',
                   style: TextStyle(
@@ -169,11 +165,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   'We will send you a verification code',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
+
                 const SizedBox(height: 40),
+
+                // Phone Input
                 TextField(
-                  controller: controller,
+                  controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
+                  enabled: !_isLoading,
                   decoration: const InputDecoration(
                     labelText: 'Phone Number',
                     prefixText: '+63 ',
@@ -184,11 +184,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
+                // Continue Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: isLoading ? null : _loginWithOTP,
+                    onPressed: _isLoading ? null : _loginWithOTP,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF5D8AA8),
                       foregroundColor: Colors.white,
@@ -197,12 +200,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: isLoading
+                    child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Continue'),
+                        : const Text(
+                            'Continue',
+                            style: TextStyle(fontSize: 16),
+                          ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
+                // Email Login Link
                 Center(
                   child: TextButton(
                     onPressed: () {
@@ -217,13 +226,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
+                // Google Sign-In Button
                 Center(
                   child: OutlinedButton.icon(
                     onPressed: _loginWithGmail,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide.none, // CHANGED: No border
+                      side: BorderSide.none,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -233,6 +245,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       'assets/images/google.png',
                       width: 20,
                       height: 20,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.g_mobiledata, size: 20);
+                      },
                     ),
                     label: const Text('Sign in with Google'),
                   ),

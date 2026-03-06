@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pin_code_fields/pin_code_fields.dart'; // Don't forget to import!
+import 'package:pin_code_fields/pin_code_fields.dart';
+import '../../services/auth/auth_service.dart';
+import '../../services/network/network_service.dart';
 
 class OTPScreen extends StatefulWidget {
   const OTPScreen({super.key});
@@ -9,133 +11,157 @@ class OTPScreen extends StatefulWidget {
 }
 
 class _OTPScreenState extends State<OTPScreen> {
-  // Controller for the OTP input
-  final TextEditingController otpController = TextEditingController();
-
-  // Track loading state
-  bool isLoading = false;
-
-  // Store the phone number passed from registration screen
-  String? mobileNo;
-
-  // Track if screen is initialized
+  bool _isLoading = false;
+  String? _phoneNumber;
   bool _isInitialized = false;
-
-  // Store the OTP value
   String _otp = '';
-
-  @override
-  void initState() {
-    super.initState();
-    // We'll get arguments in didChangeDependencies
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Only run once
     if (!_isInitialized) {
-      // Get the phone number passed from registration screen
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      final passedMobile = args != null ? args['mobileNo'] as String? : null;
-
-      setState(() {
-        mobileNo = passedMobile;
-      });
-
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        _phoneNumber = args['phoneNumber'] as String?;
+      }
       _isInitialized = true;
-
-      print('Received mobile number: $mobileNo'); // For debugging
     }
   }
 
-  void _verifyOTP() {
-    final otp = _otp; // Get OTP from pin code field
-
-    if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter complete OTP')),
-      );
+  Future<void> _verifyOTP() async {
+    if (_otp.length != 6) {
+      _showError('Please enter complete OTP');
       return;
     }
 
-    setState(() => isLoading = true);
+    if (_phoneNumber == null) {
+      _showError('Phone number not found');
+      return;
+    }
 
-    // Simulate verification
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() => isLoading = false);
+    // Check internet
+    final hasConnection = await NetworkService.hasInternetConnection();
+    if (!hasConnection) {
+      NetworkService.showNetworkErrorSnackBar(context);
+      return;
+    }
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('OTP Verified Successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+    setState(() => _isLoading = true);
 
-      // Navigate to home
-      Navigator.pushReplacementNamed(context, '/home');
-    });
+    try {
+      final success = await AuthService.verifyOTP(_otp, _phoneNumber!);
+
+      if (!mounted) return;
+
+      if (success) {
+        // Navigate to home
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        _showError('Invalid OTP. Please try again.');
+      }
+    } catch (e) {
+      _showError('Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
-  void _resendOTP() {
-    setState(() => isLoading = true);
+  Future<void> _resendOTP() async {
+    if (_phoneNumber == null) {
+      _showError('Phone number not found');
+      return;
+    }
 
-    // Simulate resending OTP
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() => isLoading = false);
+    setState(() => _isLoading = true);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('OTP resent successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    });
+    try {
+      final success = await AuthService.requestOTP(_phoneNumber!);
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('OTP resent successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        _showError('Failed to resend OTP');
+      }
+    } catch (e) {
+      _showError('Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
-  @override
-  void dispose() {
-    otpController.dispose();
-    super.dispose();
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  String _formatPhoneNumber(String? number) {
+    if (number == null || number.isEmpty) return '••• ••• ••••';
+    if (number.length == 10) {
+      return '${number.substring(0, 3)} ${number.substring(3, 6)} ${number.substring(6)}';
+    }
+    return number;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
+      appBar: AppBar(
+        title: const Text('Verify OTP'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF5D8AA8),
+        elevation: 0,
+      ),
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 20),
+
               // Title
               const Text(
-                'Enter OTP',
+                'Enter Verification Code',
                 style: TextStyle(
-                  color: Color(0xFF5D8AA8),
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF5D8AA8),
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
 
-              // Phone number display
+              const SizedBox(height: 8),
+
+              // Subtitle with phone number
               Text(
-                'We sent a code to ${mobileNo ?? '••• ••• ••••'}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                'We sent a code to +63 ${_formatPhoneNumber(_phoneNumber)}',
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
 
-              // Pin code field - this is the 6-digit input
+              const SizedBox(height: 40),
+
+              // OTP Input
               PinCodeTextField(
                 appContext: context,
                 length: 6,
                 obscureText: false,
                 animationType: AnimationType.fade,
+                enabled: !_isLoading,
                 pinTheme: PinTheme(
                   shape: PinCodeFieldShape.box,
                   borderRadius: BorderRadius.circular(8),
@@ -161,9 +187,10 @@ class _OTPScreenState extends State<OTPScreen> {
                   _otp = value;
                 },
               ),
+
               const SizedBox(height: 24),
 
-              // Resend row
+              // Resend Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -172,7 +199,7 @@ class _OTPScreenState extends State<OTPScreen> {
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                   TextButton(
-                    onPressed: isLoading ? null : _resendOTP,
+                    onPressed: _isLoading ? null : _resendOTP,
                     child: const Text(
                       'Resend OTP',
                       style: TextStyle(
@@ -183,12 +210,14 @@ class _OTPScreenState extends State<OTPScreen> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 24),
 
-              // Verify button
+              // Verify Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
+                  onPressed: _isLoading ? null : _verifyOTP,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5D8AA8),
                     foregroundColor: Colors.white,
@@ -197,10 +226,9 @@ class _OTPScreenState extends State<OTPScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: isLoading ? null : _verifyOTP,
-                  child: isLoading
+                  child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Validate'),
+                      : const Text('Verify', style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],

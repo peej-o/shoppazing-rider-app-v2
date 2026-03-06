@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/auth/auth_service.dart';
+import '../../services/network/network_service.dart';
 
 class EmailLoginScreen extends StatefulWidget {
   const EmailLoginScreen({super.key});
@@ -8,14 +10,10 @@ class EmailLoginScreen extends StatefulWidget {
 }
 
 class _EmailLoginScreenState extends State<EmailLoginScreen> {
-  // Controllers for text fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  // Form key for validation
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // State variables
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -27,34 +25,47 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   }
 
   Future<void> _login() async {
-    // Validate form first
+    // Validate form
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    // Check internet
+    final hasConnection = await NetworkService.hasInternetConnection();
+    if (!hasConnection) {
+      NetworkService.showNetworkErrorSnackBar(context);
+      return;
+    }
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    setState(() => _isLoading = true);
 
-    if (!mounted) return;
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
 
-    setState(() {
-      _isLoading = false;
-    });
+      final success = await AuthService.loginWithEmail(email, password);
 
-    // For demo, just show success message
+      if (!mounted) return;
+
+      if (success) {
+        // Navigate to home
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        _showError('Invalid email or password');
+      }
+    } catch (e) {
+      _showError('Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login successful!'),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
-
-    // Navigate to home
-    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
@@ -68,7 +79,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -76,10 +87,32 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
               children: [
                 const SizedBox(height: 20),
 
-                // Email field
+                // Title
+                const Text(
+                  'Welcome Back!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF5D8AA8),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Login with your email and password',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 40),
+
+                // Email Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Email is required';
@@ -89,19 +122,27 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.email,
+                      color: Color(0xFF5D8AA8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // Password field with visibility toggle
+                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  enabled: !_isLoading,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
@@ -113,13 +154,19 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                   },
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.lock,
+                      color: Color(0xFF5D8AA8),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
                       ),
                       onPressed: () {
                         setState(() {
@@ -127,25 +174,68 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                         });
                       },
                     ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Forgot Password Link
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      // TODO: Implement forgot password
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Forgot Password coming soon'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: Color(0xFF5D8AA8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Login button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5D8AA8),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5D8AA8),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Login', style: TextStyle(fontSize: 16)),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Login', style: TextStyle(fontSize: 16)),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Back to Phone Login
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    '← Back to Phone Login',
+                    style: TextStyle(color: Color(0xFF5D8AA8)),
+                  ),
                 ),
               ],
             ),

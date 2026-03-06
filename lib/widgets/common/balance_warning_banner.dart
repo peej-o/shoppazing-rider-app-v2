@@ -1,15 +1,11 @@
-// FILE: lib/widgets/common/balance_warning_banner.dart
 import 'package:flutter/material.dart';
 
 class BalanceWarningBanner extends StatelessWidget {
   final double balance;
   final VoidCallback? onTap;
 
-  const BalanceWarningBanner({
-    super.key,
-    required this.balance,
-    this.onTap,
-  });
+  const BalanceWarningBanner({Key? key, required this.balance, this.onTap})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,25 +15,15 @@ class BalanceWarningBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
         border: Border(
-          bottom: BorderSide(
-            color: Colors.orange.shade200,
-            width: 1,
-          ),
+          bottom: BorderSide(color: Colors.orange.shade200, width: 1),
         ),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.orange.shade700,
-              size: 16,
-            ),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange.shade700,
+            size: 24,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -45,7 +31,7 @@ class BalanceWarningBanner extends StatelessWidget {
               'Low balance: ₱${balance.toStringAsFixed(2)}. Please top up to continue.',
               style: TextStyle(
                 color: Colors.orange.shade900,
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -55,20 +41,19 @@ class BalanceWarningBanner extends StatelessWidget {
             TextButton(
               onPressed: onTap,
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                backgroundColor: Colors.orange.shade100,
-                foregroundColor: Colors.orange.shade900,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
               ),
-              child: const Text(
+              child: Text(
                 'Top Up',
                 style: TextStyle(
+                  color: Colors.orange.shade900,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 14,
                 ),
               ),
             ),

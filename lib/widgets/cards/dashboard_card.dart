@@ -1,4 +1,3 @@
-// FILE: lib/widgets/cards/dashboard_card.dart
 import 'package:flutter/material.dart';
 
 class DashboardCard extends StatelessWidget {
@@ -32,7 +31,7 @@ class DashboardCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Colored header with icon and label
+            // Header with icon and label
             Container(
               decoration: BoxDecoration(
                 color: color ?? const Color(0xFF5D8AA8).withOpacity(0.1),
@@ -57,11 +56,7 @@ class DashboardCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      icon, 
-                      color: const Color(0xFF5D8AA8), 
-                      size: 18,
-                    ),
+                    child: Icon(icon, color: const Color(0xFF5D8AA8), size: 18),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -77,8 +72,8 @@ class DashboardCard extends StatelessWidget {
                 ],
               ),
             ),
-            
-            // Card body with value and optional trailing widget
+
+            // Card body with value and trailing widget
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
               child: Row(
