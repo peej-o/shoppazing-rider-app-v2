@@ -43,17 +43,30 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
+      print('[DEBUG] Attempting email login for: $email');
+
       final success = await AuthService.loginWithEmail(email, password);
 
       if (!mounted) return;
 
       if (success) {
+        print('[DEBUG] Email login successful');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
         // Navigate to home
         Navigator.pushReplacementNamed(context, '/home');
       } else {
+        print('[DEBUG] Email login failed');
         _showError('Invalid email or password');
       }
     } catch (e) {
+      print('[ERROR] Email login error: $e');
       _showError('Error: ${e.toString()}');
     } finally {
       if (mounted) {
@@ -146,9 +159,6 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
                     }
                     return null;
                   },

@@ -207,15 +207,19 @@ class AuthService {
       );
 
       print('[DEBUG] Email login response: ${response.statusCode}');
+      print('[DEBUG] Email login body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         // Check if user has CUSTOMER role
-        if (data['RoleName']?.toString().toUpperCase() == 'CUSTOMER') {
+        final roleName = data['RoleName']?.toString() ?? '';
+        if (roleName.toUpperCase() == 'CUSTOMER') {
+          print('[DEBUG] Customer accounts cannot login as riders');
           return false;
         }
 
+        // Save session
         await _saveSessionFromToken(data);
         return true;
       }
