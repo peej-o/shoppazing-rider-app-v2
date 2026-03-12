@@ -8,43 +8,33 @@ class AuthService {
   // Login with phone number (request OTP)
   static Future<bool> requestOTP(String phoneNumber) async {
     try {
-      // Format phone number (add 63 prefix)
       final formattedPhone = '63$phoneNumber';
 
       print('[DEBUG] Requesting OTP for: $formattedPhone');
+      print('[DEBUG] URL: ${ApiConfig.apiUri('/sendotp')}');
 
-      // Try both endpoints
-      final endpoints = [
-        '/sendotp', // shop/sendotp
-        '/loginbyotp', // alternative
-      ];
+      final response = await ApiClient.post(
+        ApiConfig.apiUri('/sendotp'),
+        body: jsonEncode({'MobileNo': formattedPhone}),
+        skipAuth: true,
+      );
 
-      for (final endpoint in endpoints) {
-        try {
-          print('[DEBUG] Trying endpoint: $endpoint');
-          final response = await ApiClient.post(
-            ApiConfig.apiUri(endpoint),
-            body: jsonEncode({'MobileNo': formattedPhone}),
-            skipAuth: true,
-          );
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
 
-          print('[DEBUG] Response status: ${response.statusCode}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
 
-          if (response.statusCode == 200) {
-            final data = jsonDecode(response.body);
-            print('[DEBUG] Response data: $data');
+        // Add these prints
+        print('[DEBUG] data["status_code"]: ${data['status_code']}');
+        print(
+          '[DEBUG] data["status_code"] == 200: ${data['status_code'] == 200}',
+        );
 
-            // Check different response formats
-            if (data['status_code'] == 200 || data['StatusCode'] == 200) {
-              return true;
-            }
-          }
-        } catch (e) {
-          print('[DEBUG] Endpoint $endpoint failed: $e');
-          continue;
-        }
+        return data['status_code'] == 200;
       }
 
+      print('[DEBUG] Response status not 200/201: ${response.statusCode}');
       return false;
     } catch (e) {
       print('[ERROR] requestOTP: $e');
@@ -58,6 +48,7 @@ class AuthService {
       final formattedPhone = '63$phoneNumber';
 
       print('[DEBUG] Verifying OTP for: $formattedPhone');
+      print('[DEBUG] OTP entered: $otp');
 
       final response = await ApiClient.post(
         ApiConfig.apiUri('/verifyotplogin'),
@@ -65,6 +56,9 @@ class AuthService {
           'OTP': otp,
           'MobileNo': formattedPhone,
           'UserId': '',
+          'issuer': 'com.byteswiz.shoppazing', // Add these from riderV1
+          'audience': 'ShoppaZing',
+          'encryptedSecretKey': 'rOUiWiiqxr6Ot/5K03uLleWNBQutrIAwjPnyHeTP/rc=',
         }),
         skipAuth: true,
       );
@@ -75,16 +69,13 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Check if OTP is valid
         if (data['status_code'] == 200) {
-          // Check if user needs to register
-          if (data['message']?.toString().contains('register') == true) {
-            // Navigate to registration
-            return false; // Will handle in UI
+          // Extract token from BearerToken object
+          if (data['BearerToken'] != null) {
+            await _saveSessionFromResponse(data['BearerToken'], formattedPhone);
+          } else {
+            await _saveSessionFromResponse(data, formattedPhone);
           }
-
-          // Save session
-          await _saveSessionFromResponse(data, formattedPhone);
           return true;
         }
       }
@@ -100,19 +91,104 @@ class AuthService {
     try {
       final formattedPhone = '63$phoneNumber';
 
+      print('[DEBUG] Checking if user exists: $formattedPhone');
+      print('[DEBUG] URL: ${ApiConfig.apiUri('/verifyotplogin')}');
+
       final response = await ApiClient.post(
         ApiConfig.apiUri('/verifyotplogin'),
         body: jsonEncode({'OTP': '', 'MobileNo': formattedPhone, 'UserId': ''}),
         skipAuth: true,
       );
 
-      if (response.statusCode == 200) {
+      print('[DEBUG] Check user response status: ${response.statusCode}');
+      print('[DEBUG] Check user response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Include 201
         final data = jsonDecode(response.body);
-        // If status_code is 403, user exists (invalid OTP but user found)
-        return data['status_code'] == 403;
+
+        // Status code 403 means user exists (invalid OTP)
+        if (data['status_code'] == 403) {
+          print('[DEBUG] User exists (status_code 403)');
+          return true;
+        }
+
+        // Status code 1 means user exists (from registration response)
+        if (data['status_code'] == 1) {
+          print('[DEBUG] User exists (status_code 1)');
+          return true;
+        }
+
+        // Check if we got UserId (another indicator of existing user)
+        if (data['UserId'] != null && data['UserId'].toString().isNotEmpty) {
+          print('[DEBUG] User exists (has UserId)');
+          return true;
+        }
+
+        print('[DEBUG] User does not exist');
+        return false;
+      }
+
+      return false;
+    } catch (e) {
+      print('[ERROR] checkUserExists: $e');
+      return false;
+    }
+  }
+
+  // Register new user
+  static Future<bool> registerUser({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phoneNumber,
+    required String password,
+  }) async {
+    try {
+      final formattedPhone = '63$phoneNumber';
+
+      final registrationData = {
+        'Email': email,
+        'Firstname': firstName,
+        'Lastname': lastName,
+        'MobileNo': formattedPhone,
+        'Password': password,
+        'RoleName': 'RIDER',
+      };
+
+      print('[DEBUG] Registering user: $registrationData');
+      print('[DEBUG] URL: ${ApiConfig.apiUri('/registeruser')}');
+
+      final response = await ApiClient.post(
+        ApiConfig.apiUri('/registeruser'),
+        body: jsonEncode(registrationData),
+        headers: {'Content-Type': 'application/json'},
+        skipAuth: true,
+      );
+
+      print('[DEBUG] Registration response: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+
+        // Check different success indicators
+        if (data['status_code'] == 200 || data['StatusCode'] == 200) {
+          print('[DEBUG] Registration successful');
+          return true;
+        } else if (data['status_code'] == 1) {
+          print('[DEBUG] User already exists');
+          return false;
+        } else {
+          print(
+            '[DEBUG] Registration failed with status: ${data['status_code']}',
+          );
+          return false;
+        }
       }
       return false;
     } catch (e) {
+      print('[ERROR] registerUser: $e');
       return false;
     }
   }
@@ -130,14 +206,20 @@ class AuthService {
         },
       );
 
+      print('[DEBUG] Email login response: ${response.statusCode}');
+      print('[DEBUG] Email login body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         // Check if user has CUSTOMER role
-        if (data['RoleName']?.toString().toUpperCase() == 'CUSTOMER') {
+        final roleName = data['RoleName']?.toString() ?? '';
+        if (roleName.toUpperCase() == 'CUSTOMER') {
+          print('[DEBUG] Customer accounts cannot login as riders');
           return false;
         }
 
+        // Save session
         await _saveSessionFromToken(data);
         return true;
       }

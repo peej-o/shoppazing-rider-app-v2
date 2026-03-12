@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const StartupPage(),
         '/login': (context) =>
             const PhoneNumberScreen(), // Changed from '/phone' to '/login'
+        '/register': (context) => const RegisterScreen(),
         '/email_login': (context) => const EmailLoginScreen(),
         '/otp': (context) => const OTPScreen(),
         '/home': (context) => const RootNavigator(),

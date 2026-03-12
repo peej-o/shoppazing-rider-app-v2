@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../services/auth/auth_service.dart';
 import '../../services/network/network_service.dart';
+import '../../services/database/user_session_db.dart';
+import '../../services/api/api_client.dart';
+import '../../services/api/api_config.dart';
+import 'dart:convert';
 
 class OTPScreen extends StatefulWidget {
   const OTPScreen({super.key});
@@ -50,22 +54,155 @@ class _OTPScreenState extends State<OTPScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await AuthService.verifyOTP(_otp, _phoneNumber!);
+      // Format phone number exactly like riderV1
+      String formattedPhone = _phoneNumber!;
+      final m = formattedPhone.replaceAll(RegExp(r'[^0-9]'), '');
+      if (m.startsWith('0') && m.length == 11) {
+        formattedPhone = '63' + m.substring(1);
+      } else if (m.length == 10 && m.startsWith('9')) {
+        formattedPhone = '63' + m;
+      } else if (m.startsWith('63')) {
+        formattedPhone = m;
+      }
+
+      print('[DEBUG] Verifying OTP for: $formattedPhone');
+      print('[DEBUG] OTP entered: $_otp');
+
+      final response = await ApiClient.post(
+        ApiConfig.apiUri('/verifyotplogin'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'OTP': _otp,
+          'MobileNo': formattedPhone,
+          'UserId': '',
+          'issuer': 'com.byteswiz.shoppazing',
+          'audience': 'ShoppaZing',
+          'encryptedSecretKey': 'rOUiWiiqxr6Ot/5K03uLleWNBQutrIAwjPnyHeTP/rc=',
+        }),
+        skipAuth: true,
+      );
+
+      print('[DEBUG] Verify response status: ${response.statusCode}');
+      print('[DEBUG] Verify response body: ${response.body}');
 
       if (!mounted) return;
 
-      if (success) {
-        // Navigate to home
-        Navigator.pushReplacementNamed(context, '/home');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+
+        // Check if user not found (status_code 3)
+        if (data['status_code'] == 3 &&
+            data['message']?.toString().toLowerCase().contains(
+                  'no user found',
+                ) ==
+                true) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/register',
+            arguments: {'phoneNumber': _phoneNumber},
+          );
+          return;
+        }
+
+        // Check if OTP verification successful (status_code 200)
+        if (data['status_code'] == 200) {
+          // Get role name - check both root and UserGoogleAuthModel
+          String roleName = data['RoleName']?.toString() ?? '';
+          if (roleName.isEmpty) {
+            final userModel = data['UserGoogleAuthModel'] as Map?;
+            roleName = userModel?['RoleName']?.toString() ?? '';
+          }
+
+          print('[DEBUG] User role: $roleName');
+
+          // Check if user has CUSTOMER role - restrict login
+          if (roleName.toUpperCase() == 'CUSTOMER') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Customer accounts cannot login as riders. Please contact support.',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+            setState(() => _isLoading = false);
+            return;
+          }
+
+          // Save session from response
+          await _saveSessionFromResponse(data, formattedPhone);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          _showError(data['message'] ?? 'Invalid OTP. Please try again.');
+        }
       } else {
-        _showError('Invalid OTP. Please try again.');
+        _showError('Server error. Please try again.');
       }
     } catch (e) {
+      print('[ERROR] Verify OTP error: $e');
       _showError('Error: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _saveSessionFromResponse(
+    Map<String, dynamic> data,
+    String mobileNo,
+  ) async {
+    try {
+      // Get role from UserGoogleAuthModel if needed
+      String roleName = data['RoleName']?.toString() ?? '';
+      if (roleName.isEmpty) {
+        final userModel = data['UserGoogleAuthModel'] as Map?;
+        roleName = userModel?['RoleName']?.toString() ?? '';
+      }
+
+      String riderId = data['RiderId']?.toString() ?? '';
+      if (riderId.isEmpty) {
+        final userModel = data['UserGoogleAuthModel'] as Map?;
+        riderId = userModel?['RiderId']?.toString() ?? '';
+      }
+
+      // Get bearer token - could be in different formats
+      String accessToken = '';
+      if (data['BearerToken'] is Map) {
+        accessToken = data['BearerToken']['access_token']?.toString() ?? '';
+      } else if (data['BearerToken'] is String) {
+        accessToken = data['BearerToken'];
+      } else {
+        accessToken = data['access_token']?.toString() ?? '';
+      }
+
+      await UserSessionDB.saveSession(
+        accessToken: accessToken,
+        tokenType: 'bearer',
+        expiresIn: data['expires_in'] ?? 3600,
+        email: data['Email'] ?? '',
+        businessName: '',
+        merchantId: '',
+        userId: data['UserId'] ?? '',
+        firstname: data['FirstName'] ?? '',
+        lastname: data['LastName'] ?? '',
+        mobileNo: mobileNo,
+        mobileConfirmed: 'true',
+        riderId: riderId,
+        roleName: roleName,
+      );
+
+      print('[DEBUG] Session saved successfully');
+    } catch (e) {
+      print('[ERROR] Error saving session: $e');
     }
   }
 

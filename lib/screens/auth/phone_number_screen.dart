@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth/auth_service.dart';
+import '../../services/auth/google_signin_service.dart';
 import '../../services/network/network_service.dart';
 
 class PhoneNumberScreen extends StatefulWidget {
@@ -68,13 +69,14 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen> {
       if (!mounted) return;
 
       if (success) {
-        // Navigate to OTP screen
+        print('[DEBUG] Success, navigating to OTP screen');
         Navigator.pushNamed(
           context,
           '/otp',
           arguments: {'phoneNumber': phoneNumber},
         );
       } else {
+        print('[DEBUG] Failed to send OTP');
         _showError('Failed to send OTP. Please try again.');
       }
     } catch (e) {
@@ -86,14 +88,52 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen> {
     }
   }
 
-  void _loginWithGmail() {
-    // TODO: Implement Google Sign-In
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Google Sign-In coming soon'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+  Future<void> _loginWithGoogle() async {
+    // Check internet
+    final hasConnection = await NetworkService.hasInternetConnection();
+    if (!hasConnection) {
+      NetworkService.showNetworkErrorSnackBar(context);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      print('[DEBUG] Starting Google Sign-In...');
+
+      final googleService = GoogleSignInService();
+      final result = await googleService.signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (result.success) {
+        print('[DEBUG] Google Sign-In successful');
+        print('[DEBUG] Email: ${result.userData?.email}');
+
+        // TODO: Send ID token to your backend
+        // await AuthService.loginWithGoogle(result.userData!.idToken);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google Sign-In successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to home or registration if incomplete profile
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        print('[DEBUG] Google Sign-In failed: ${result.error}');
+        _showError(result.error ?? 'Google Sign-In failed');
+      }
+    } catch (e) {
+      print('[ERROR] Google Sign-In error: $e');
+      _showError('Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _showError(String message) {
@@ -232,10 +272,13 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen> {
                 // Google Sign-In Button
                 Center(
                   child: OutlinedButton.icon(
-                    onPressed: _loginWithGmail,
+                    onPressed: _isLoading ? null : _loginWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide.none,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 20,
+                      ),
+                      side: const BorderSide(color: Colors.grey),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
