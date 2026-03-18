@@ -1,6 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../api/api_config.dart';
 
 class RiderOrdersDB {
   static Database? _db;

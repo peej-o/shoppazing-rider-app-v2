@@ -10,13 +10,13 @@ class AddressButton extends StatelessWidget {
   final bool isCompact;
 
   const AddressButton({
-    Key? key,
+    super.key,
     required this.address,
     this.latitude,
     this.longitude,
     this.label,
     this.isCompact = false,
-  }) : super(key: key);
+  });
 
   Future<void> _showMapOptions(BuildContext context) async {
     if (latitude == null || longitude == null) {

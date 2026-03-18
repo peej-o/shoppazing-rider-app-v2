@@ -13,10 +13,10 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   // Mock data for now - will be replaced with real data later
-  double _balance = 250.50;
-  int _ongoing = 3;
-  double _earnings = 1250.75;
-  int _completed = 15;
+  final double _balance = 250.50;
+  final int _ongoing = 3;
+  final double _earnings = 1250.75;
+  final int _completed = 15;
 
   // Mock pending loads
   final List<Map<String, dynamic>> _mockPendingLoads = [

@@ -16,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen>
   late TabController _tabController;
 
   // Mock data with different statuses for testing
-  List<OrderData> _mockOrders = [
+  final List<OrderData> _mockOrders = [
     // Pending orders (can be accepted)
     OrderData(
       serverHeaderId: 123451,
@@ -324,10 +324,8 @@ class _HomeScreenState extends State<HomeScreen>
                   showAccept: canShowAccept,
                   onAccept: (newStatus) async {
                     print('🟢 HOME (onTap): Received status $newStatus');
-                    if (newStatus != null) {
-                      await _updateOrderStatus(order.serverHeaderId, newStatus);
-                      await _loadInitialOrders();
-                    }
+                    await _updateOrderStatus(order.serverHeaderId, newStatus);
+                    await _loadInitialOrders();
                   },
                 ),
               ),
@@ -346,29 +344,27 @@ class _HomeScreenState extends State<HomeScreen>
                       '🟢 HOME (onAccept): Received status $newStatus for order ${order.orderNumber}',
                     );
 
-                    if (newStatus != null) {
-                      await _updateOrderStatus(order.serverHeaderId, newStatus);
-                      await _loadInitialOrders();
+                    await _updateOrderStatus(order.serverHeaderId, newStatus);
+                    await _loadInitialOrders();
 
-                      if (context.mounted) {
-                        String message = '';
-                        if (newStatus == '3')
-                          message = 'Order accepted!';
-                        else if (newStatus == '6')
-                          message = 'Order picked up!';
-                        else if (newStatus == '7')
-                          message = 'Order delivered!';
-                        else if (newStatus == '8')
-                          message = 'Order cancelled!';
+                    if (context.mounted) {
+                      String message = '';
+                      if (newStatus == '3')
+                        message = 'Order accepted!';
+                      else if (newStatus == '6')
+                        message = 'Order picked up!';
+                      else if (newStatus == '7')
+                        message = 'Order delivered!';
+                      else if (newStatus == '8')
+                        message = 'Order cancelled!';
 
-                        if (message.isNotEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(message),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
+                      if (message.isNotEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(message),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
                       }
                     }
                   },

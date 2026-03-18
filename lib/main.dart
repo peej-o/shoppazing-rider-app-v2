@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
 }
 
 class StartupPage extends StatefulWidget {
-  const StartupPage({Key? key}) : super(key: key);
+  const StartupPage({super.key});
 
   @override
   State<StartupPage> createState() => _StartupPageState();

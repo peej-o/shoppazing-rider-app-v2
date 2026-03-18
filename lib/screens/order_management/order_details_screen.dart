@@ -12,11 +12,11 @@ class OrderDetailsScreen extends StatefulWidget {
   final Function(String)? onAccept;
 
   const OrderDetailsScreen({
-    Key? key,
+    super.key,
     required this.order,
     this.showAccept = false,
     this.onAccept,
-  }) : super(key: key);
+  });
 
   @override
   State<OrderDetailsScreen> createState() => _OrderDetailsScreenState();

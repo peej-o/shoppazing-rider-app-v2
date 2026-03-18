@@ -33,7 +33,7 @@ class ApiClient {
         final session = await UserSessionDB.getSession();
         final token = session?['access_token']?.toString();
         if (token != null && token.isNotEmpty) {
-          merged['Authorization'] = 'Bearer ' + token;
+          merged['Authorization'] = 'Bearer $token';
         }
       } catch (_) {
         // Ignore session errors; proceed without token

@@ -125,10 +125,10 @@ class OrderData {
       isPaid: (json['IsPaid'] as bool?) ?? false,
       isManualDelivered: (json['IsManualDelivered'] as bool?) ?? false,
       isOrderRated: (json['IsOrderRated'] as bool?) ?? false,
-      paymentTypeId: int.tryParse(json['PaymentTypeId']?.toString() ?? '') ?? null,
-      onlinePaymentTypeId: int.tryParse(json['OnlinePaymentTypeId']?.toString() ?? '') ?? null,
+      paymentTypeId: int.tryParse(json['PaymentTypeId']?.toString() ?? ''),
+      onlinePaymentTypeId: int.tryParse(json['OnlinePaymentTypeId']?.toString() ?? ''),
       useLoyaltyPoints: (json['UseLoyaltyPoints'] as bool?) ?? false,
-      saleHeaderId: int.tryParse(json['SaleHeaderId']?.toString() ?? '') ?? null,
+      saleHeaderId: int.tryParse(json['SaleHeaderId']?.toString() ?? ''),
       redeemedCash: double.tryParse(json['RedeemedCash']?.toString() ?? '0') ?? 0.0,
       dfDiscount: double.tryParse(json['DFDiscount']?.toString() ?? '0') ?? 0.0,
       riderProfilePic: json['RiderProfilePic']?.toString(),
@@ -136,8 +136,8 @@ class OrderData {
       riderPlateNo: json['RiderPlateNo']?.toString(),
       riderDriversLicenseNo: json['RiderDriversLicenseNo']?.toString(),
       riderUserId: json['RiderUserId']?.toString(),
-      riderLat: double.tryParse(json['RiderLat']?.toString() ?? '') ?? null,
-      riderLng: double.tryParse(json['RiderLng']?.toString() ?? '') ?? null,
+      riderLat: double.tryParse(json['RiderLat']?.toString() ?? ''),
+      riderLng: double.tryParse(json['RiderLng']?.toString() ?? ''),
     );
   }
 }

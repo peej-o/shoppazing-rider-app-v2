@@ -5,8 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 class MobilePhoneButton extends StatelessWidget {
   final String mobileNumber;
 
-  const MobilePhoneButton({Key? key, required this.mobileNumber})
-    : super(key: key);
+  const MobilePhoneButton({super.key, required this.mobileNumber});
 
   Future<void> _launchPhoneCall() async {
     final url = 'tel:$mobileNumber';

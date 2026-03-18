@@ -196,6 +196,9 @@ class AuthService {
   // Login with email/password
   static Future<bool> loginWithEmail(String email, String password) async {
     try {
+      print('[DEBUG] Email login attempt for: $email');
+      print('[DEBUG] Using token URL: ${ApiConfig.tokenUrl}');
+
       final response = await http.post(
         Uri.parse(ApiConfig.tokenUrl),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -206,8 +209,8 @@ class AuthService {
         },
       );
 
-      print('[DEBUG] Email login response: ${response.statusCode}');
-      print('[DEBUG] Email login body: ${response.body}');
+      print('[DEBUG] Email login response status: ${response.statusCode}');
+      print('[DEBUG] Email login response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -219,10 +222,19 @@ class AuthService {
           return false;
         }
 
-        // Save session
+        // Save session from token response
         await _saveSessionFromToken(data);
         return true;
       }
+
+      // Handle specific error messages
+      if (response.statusCode == 400) {
+        final data = jsonDecode(response.body);
+        if (data['error'] == 'invalid_grant') {
+          print('[DEBUG] Invalid email or password');
+        }
+      }
+
       return false;
     } catch (e) {
       print('[ERROR] loginWithEmail: $e');
