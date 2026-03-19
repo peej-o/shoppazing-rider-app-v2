@@ -3,7 +3,7 @@ import '../../widgets/cards/dashboard_card.dart';
 import '../../widgets/cards/transaction_card.dart';
 import '../../widgets/modals/top_up_sheet.dart';
 import '../payment/transaction_history_page.dart';
-import '../payment/payment_webview_page.dart';
+import '../payment/payment_webview_page.dart'; // Add this import
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,10 +14,10 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   // Mock data for now - will be replaced with real data later
-  final double _balance = 250.50;
-  final int _ongoing = 3;
-  final double _earnings = 1250.75;
-  final int _completed = 15;
+  double _balance = 250.50;
+  int _ongoing = 3;
+  double _earnings = 1250.75;
+  int _completed = 15;
 
   // Mock pending loads
   final List<Map<String, dynamic>> _mockPendingLoads = [
@@ -54,6 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return _balance < 100;
   }
 
+  // Updated: Now opens PaymentWebViewPage instead of showing demo snackbar
   void _showTopUpModal() {
     showModalBottomSheet(
       context: context,
@@ -66,7 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     ).then((amount) {
       if (amount != null) {
-        // 🔥 REPLACE DEMO SNACKBAR WITH ACTUAL PAYMENT WEBVIEW
+        // Navigate to PaymentWebViewPage
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -91,21 +92,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  // Add this helper method to build payment URL
+  // Build payment URL - Replace with actual URL from your API
   String _buildPaymentUrl(int amount) {
-    // For testing, use a sample URL
-    // In production, this should come from your API
-    return 'https://example.com/pay?amount=$amount'; // Replace with actual payment URL
+    // TODO: Replace with actual payment URL from your backend
+    // This is a sample URL for testing the WebView
+    return 'https://www.example.com/pay?amount=$amount';
 
     // Actual implementation from riderV1 would be:
+    // final session = await UserSessionDB.getSession();
+    // final mobileNo = session?['mobile_no'] ?? '';
+    // final email = session?['email'] ?? '';
+    // final orderNo = 'REF${DateTime.now().millisecondsSinceEpoch}';
     // return '${ApiConfig.paymentStartLoadPurchase}?Id=16&PROC_ID=GCSH&amount=$amount&PhoneNumber=$mobileNo&email=$email&LoadRefNo=$orderNo';
   }
 
-  // Add this method to refresh dashboard data
+  // Refresh dashboard data after payment
   Future<void> _refreshDashboard() async {
-    // TODO: Implement actual refresh logic
+    // TODO: Implement actual refresh logic from API
+    // For now, just simulate with setState
     setState(() {
-      // Update balance, pending loads, etc.
+      // Example: Update balance after top up
+      // _balance += amount; // You would need to pass the amount
     });
   }
 
