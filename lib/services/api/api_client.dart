@@ -152,18 +152,9 @@ class ApiClient {
         String? rawMobile = session?['mobile_no']?.toString();
 
         // Normalize mobile to 63XXXXXXXXXX
-        String? normalizedMobile;
         if (rawMobile != null) {
           final m = rawMobile.replaceAll(RegExp(r'[^0-9]'), '');
-          if (m.startsWith('0') && m.length == 11) {
-            normalizedMobile = '63${m.substring(1)}';
-          } else if (m.length == 10 && m.startsWith('9')) {
-            normalizedMobile = '63$m';
-          } else if (m.startsWith('63')) {
-            normalizedMobile = m;
-          } else {
-            normalizedMobile = m;
-          }
+          // Mobile normalization logic here
         }
       }
     } catch (_) {

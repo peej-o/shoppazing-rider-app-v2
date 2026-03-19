@@ -3,6 +3,7 @@ import '../../widgets/cards/dashboard_card.dart';
 import '../../widgets/cards/transaction_card.dart';
 import '../../widgets/modals/top_up_sheet.dart';
 import '../payment/transaction_history_page.dart';
+import '../payment/payment_webview_page.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -65,13 +66,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     ).then((amount) {
       if (amount != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Top up ₱$amount (demo)'),
-            backgroundColor: Colors.green,
+        // 🔥 REPLACE DEMO SNACKBAR WITH ACTUAL PAYMENT WEBVIEW
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentWebViewPage(
+              paymentUrl: _buildPaymentUrl(amount),
+              onPaymentComplete: () {
+                // Refresh dashboard after successful payment
+                _refreshDashboard();
+
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Payment completed! Balance updated.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
           ),
         );
       }
+    });
+  }
+
+  // Add this helper method to build payment URL
+  String _buildPaymentUrl(int amount) {
+    // For testing, use a sample URL
+    // In production, this should come from your API
+    return 'https://example.com/pay?amount=$amount'; // Replace with actual payment URL
+
+    // Actual implementation from riderV1 would be:
+    // return '${ApiConfig.paymentStartLoadPurchase}?Id=16&PROC_ID=GCSH&amount=$amount&PhoneNumber=$mobileNo&email=$email&LoadRefNo=$orderNo';
+  }
+
+  // Add this method to refresh dashboard data
+  Future<void> _refreshDashboard() async {
+    // TODO: Implement actual refresh logic
+    setState(() {
+      // Update balance, pending loads, etc.
     });
   }
 

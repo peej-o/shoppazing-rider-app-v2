@@ -51,8 +51,6 @@ class AccountService {
         throw Exception('No auth token');
       }
 
-      final url = ApiConfig.apiUri('/updateRiderProfile');
-
       // This will be used with MultipartRequest for images
       // For now, we'll just return true for mock
       return true;
