@@ -4,8 +4,7 @@ class BalanceWarningBanner extends StatelessWidget {
   final double balance;
   final VoidCallback? onTap;
 
-  const BalanceWarningBanner({Key? key, required this.balance, this.onTap})
-    : super(key: key);
+  const BalanceWarningBanner({super.key, required this.balance, this.onTap});
 
   @override
   Widget build(BuildContext context) {

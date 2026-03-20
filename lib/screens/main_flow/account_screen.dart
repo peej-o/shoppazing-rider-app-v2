@@ -6,7 +6,7 @@ import '../../widgets/cards/info_card.dart';
 import '../../widgets/cards/info_row.dart';
 import '../../widgets/cards/settings_tile.dart';
 import '../location/map_page.dart';
-import 'account_activation_page.dart';
+import 'account_activation_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -353,7 +353,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          AccountActivationPage(initialRiderInfo: _riderInfo),
+                          AccountActivationScreen(initialRiderInfo: _riderInfo),
                     ),
                   );
                   if (updated == true && mounted) {
@@ -396,7 +396,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   final updated = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AccountActivationPage(),
+                      builder: (context) => const AccountActivationScreen(),
                     ),
                   );
                   if (updated == true && mounted) {

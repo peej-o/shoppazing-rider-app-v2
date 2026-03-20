@@ -21,7 +21,7 @@ class InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Label
-          Container(
+          SizedBox(
             width: labelWidth,
             child: Text(
               label,

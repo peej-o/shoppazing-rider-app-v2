@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/entities/order.dart';
-import '../../services/api/api_config.dart';
+import '../../services/orders/order_service.dart';
 import '../../widgets/common/address_button.dart';
 import '../../widgets/common/mobile_phone_button.dart';
 import '../../utils/order_helpers.dart';
+import '../chat/chat_screen.dart'; // Add this import
 
 class OrderDetailsScreen extends StatefulWidget {
   final OrderData order;
@@ -47,26 +48,32 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      final success = await OrderService.acceptOrder(widget.order);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order accepted!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order accepted!'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      print('🔵 ACCEPT: Calling onAccept with status 3');
-      if (widget.onAccept != null) {
-        widget.onAccept!('3');
+        if (widget.onAccept != null) {
+          widget.onAccept!('3');
+        }
+
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _error = 'Failed to accept order';
+          _isAccepting = false;
+        });
       }
-
-      Navigator.pop(context, true);
     } catch (e) {
       setState(() {
-        _error = 'Failed to accept order: $e';
+        _error = 'Error: $e';
         _isAccepting = false;
       });
     }
@@ -140,26 +147,35 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      final success = await OrderService.cancelOrder(
+        widget.order.serverHeaderId,
+        reason,
+      );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order cancelled successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      print('🔵 CANCEL: Calling onAccept with status 8');
-      if (widget.onAccept != null) {
-        widget.onAccept!('8');
+        if (widget.onAccept != null) {
+          widget.onAccept!('8');
+        }
+
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _error = 'Failed to cancel order';
+          _isCancelling = false;
+        });
       }
-
-      Navigator.pop(context, true);
     } catch (e) {
       setState(() {
-        _error = 'Failed to cancel order: $e';
+        _error = 'Error: $e';
         _isCancelling = false;
       });
     }
@@ -236,30 +252,40 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      final success = await OrderService.pickupOrder(
+        widget.order.orderNumber,
+        pin,
+        widget.order.isPaid,
+      );
 
       if (!mounted) return;
 
-      setState(() {
-        _isSubmittingPin = false;
-        _isPickedUp = true;
-      });
+      if (success) {
+        setState(() {
+          _isSubmittingPin = false;
+          _isPickedUp = true;
+        });
 
-      Navigator.pop(context); // Close dialog
+        Navigator.pop(context); // Close dialog
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order picked up successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order picked up successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      print('🔵 PICKUP: Calling onAccept with status 6');
-      if (widget.onAccept != null) {
-        widget.onAccept!('6');
+        if (widget.onAccept != null) {
+          widget.onAccept!('6');
+        }
+
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _isSubmittingPin = false;
+          _pinError = 'Invalid PIN';
+        });
       }
-
-      Navigator.pop(context, true);
     } catch (e) {
       setState(() {
         _isSubmittingPin = false;
@@ -341,30 +367,47 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      final totalAmount =
+          widget.order.subTotal +
+          widget.order.onlineServiceCharge +
+          widget.order.deliveryFee;
+
+      final success = await OrderService.deliverOrder(
+        widget.order.serverHeaderId,
+        widget.order.orderNumber,
+        pin,
+        widget.order.deliveryFee,
+        totalAmount,
+      );
 
       if (!mounted) return;
 
-      setState(() {
-        _isSubmittingPin = false;
-        _isDelivered = true;
-      });
+      if (success) {
+        setState(() {
+          _isSubmittingPin = false;
+          _isDelivered = true;
+        });
 
-      Navigator.pop(context); // Close dialog
+        Navigator.pop(context); // Close dialog
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order marked as delivered!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order marked as delivered!'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      print('🔵 DELIVERY: Calling onAccept with status 7');
-      if (widget.onAccept != null) {
-        widget.onAccept!('7');
+        if (widget.onAccept != null) {
+          widget.onAccept!('7');
+        }
+
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _isSubmittingPin = false;
+          _pinError = 'Invalid PIN';
+        });
       }
-
-      Navigator.pop(context, true);
     } catch (e) {
       setState(() {
         _isSubmittingPin = false;
@@ -377,12 +420,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Widget build(BuildContext context) {
     final order = widget.order;
 
-    // RIDERV1 LOGIC - Button visibility conditions
-    final bool showAcceptButton =
-        widget.showAccept && order.status == '1'; // Pending
-    final bool showPickupButton = order.status == '4' && !_isPickedUp; // Ready
-    final bool showDeliveredButton =
-        order.status == '6' && !_isDelivered; // In Transit
+    final bool showAcceptButton = widget.showAccept && order.status == '1';
+    final bool showPickupButton = order.status == '4' && !_isPickedUp;
+    final bool showDeliveredButton = order.status == '6' && !_isDelivered;
     final bool showCancelButton =
         order.status != '1' &&
         order.status != '7' &&
@@ -647,7 +687,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
             const SizedBox(height: 24),
 
-            // ACTION BUTTONS - RIDERV1 ORDER
+            // Action Buttons
             if (showAcceptButton)
               SizedBox(
                 width: double.infinity,
@@ -749,16 +789,22 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
             const SizedBox(height: 12),
 
-            // Chat Button
-            if (order.OtherChatUserFirebaseUID != null)
+            // CHAT BUTTON - ADD THIS SECTION
+            if (order.OtherChatUserFirebaseUID != null &&
+                order.OtherChatUserName != null)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Chat feature coming soon'),
-                        backgroundColor: Colors.orange,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          orderId: order.serverHeaderId.toString(),
+                          customerFirebaseUID: order.OtherChatUserFirebaseUID!,
+                          customerName: order.OtherChatUserName!,
+                          customerUserId: order.OtherChatUserId,
+                        ),
                       ),
                     );
                   },

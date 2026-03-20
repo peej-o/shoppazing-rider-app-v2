@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-//import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/auth/phone_number_screen.dart';
 import './screens/auth/email_login_screen.dart';
 import './screens/auth/otp_screen.dart';
 import './screens/auth/register_screen.dart';
 import './screens/main_flow/root_navigator.dart';
 import './services/database/user_session_db.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform, // Use riderV1 options
+  );
   runApp(const MyApp());
 }
 
@@ -44,7 +47,7 @@ class MyApp extends StatelessWidget {
 }
 
 class StartupPage extends StatefulWidget {
-  const StartupPage({Key? key}) : super(key: key);
+  const StartupPage({super.key});
 
   @override
   State<StartupPage> createState() => _StartupPageState();

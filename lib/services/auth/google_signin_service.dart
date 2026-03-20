@@ -29,7 +29,7 @@ class GoogleSignInService {
         displayName: googleUser.displayName ?? '',
         firstName: _extractFirstName(googleUser.displayName ?? ''),
         lastName: _extractLastName(googleUser.displayName ?? ''),
-        photoUrl: await googleUser.photoUrl ?? '',
+        photoUrl: googleUser.photoUrl ?? '',
         idToken: '', // Optional muna
         accessToken: '', // Optional muna
       );

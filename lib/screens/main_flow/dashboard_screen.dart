@@ -3,6 +3,7 @@ import '../../widgets/cards/dashboard_card.dart';
 import '../../widgets/cards/transaction_card.dart';
 import '../../widgets/modals/top_up_sheet.dart';
 import '../payment/transaction_history_page.dart';
+import '../payment/payment_webview_page.dart'; // Add this import
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -53,6 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return _balance < 100;
   }
 
+  // Updated: Now opens PaymentWebViewPage instead of showing demo snackbar
   void _showTopUpModal() {
     showModalBottomSheet(
       context: context,
@@ -65,13 +67,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     ).then((amount) {
       if (amount != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Top up ₱$amount (demo)'),
-            backgroundColor: Colors.green,
+        // Navigate to PaymentWebViewPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentWebViewPage(
+              paymentUrl: _buildPaymentUrl(amount),
+              onPaymentComplete: () {
+                // Refresh dashboard after successful payment
+                _refreshDashboard();
+
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Payment completed! Balance updated.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
           ),
         );
       }
+    });
+  }
+
+  // Build payment URL - Replace with actual URL from your API
+  String _buildPaymentUrl(int amount) {
+    // TODO: Replace with actual payment URL from your backend
+    // This is a sample URL for testing the WebView
+    return 'https://www.example.com/pay?amount=$amount';
+
+    // Actual implementation from riderV1 would be:
+    // final session = await UserSessionDB.getSession();
+    // final mobileNo = session?['mobile_no'] ?? '';
+    // final email = session?['email'] ?? '';
+    // final orderNo = 'REF${DateTime.now().millisecondsSinceEpoch}';
+    // return '${ApiConfig.paymentStartLoadPurchase}?Id=16&PROC_ID=GCSH&amount=$amount&PhoneNumber=$mobileNo&email=$email&LoadRefNo=$orderNo';
+  }
+
+  // Refresh dashboard data after payment
+  Future<void> _refreshDashboard() async {
+    // TODO: Implement actual refresh logic from API
+    // For now, just simulate with setState
+    setState(() {
+      // Example: Update balance after top up
+      // _balance += amount; // You would need to pass the amount
     });
   }
 

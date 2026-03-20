@@ -27,7 +27,7 @@ class OrderCard extends StatelessWidget {
   final double customerLng;
 
   const OrderCard({
-    Key? key,
+    super.key,
     required this.orderNumber,
     required this.pickup,
     required this.dropoff,
@@ -48,7 +48,7 @@ class OrderCard extends StatelessWidget {
     required this.storeLng,
     required this.customerLat,
     required this.customerLng,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

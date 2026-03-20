@@ -58,9 +58,9 @@ class _OTPScreenState extends State<OTPScreen> {
       String formattedPhone = _phoneNumber!;
       final m = formattedPhone.replaceAll(RegExp(r'[^0-9]'), '');
       if (m.startsWith('0') && m.length == 11) {
-        formattedPhone = '63' + m.substring(1);
+        formattedPhone = '63${m.substring(1)}';
       } else if (m.length == 10 && m.startsWith('9')) {
-        formattedPhone = '63' + m;
+        formattedPhone = '63$m';
       } else if (m.startsWith('63')) {
         formattedPhone = m;
       }

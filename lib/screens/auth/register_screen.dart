@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/auth/auth_service.dart';
-import '../../services/validation/validation_service.dart';
 import '../../services/network/network_service.dart';
 
 class RegisterScreen extends StatefulWidget {
