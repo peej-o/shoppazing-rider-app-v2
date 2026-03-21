@@ -39,6 +39,11 @@ class _OTPScreenState extends State<OTPScreen> {
       return;
     }
 
+    if (!RegExp(r'^[0-9]+$').hasMatch(_otp)) {
+      _showError('OTP must contain only numbers');
+      return;
+    }
+
     if (_phoneNumber == null) {
       _showError('Phone number not found');
       return;
