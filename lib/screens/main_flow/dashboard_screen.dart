@@ -3,7 +3,11 @@ import '../../widgets/cards/dashboard_card.dart';
 import '../../widgets/cards/transaction_card.dart';
 import '../../widgets/modals/top_up_sheet.dart';
 import '../payment/transaction_history_page.dart';
-import '../payment/payment_webview_page.dart'; // Add this import
+import '../payment/payment_webview_page.dart';
+import '../../services/dashboard/dashboard_service.dart';
+import '../../services/database/rider_orders_db.dart';
+import '../../services/database/user_session_db.dart';
+import '../../services/api/api_config.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,48 +17,105 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Mock data for now - will be replaced with real data later
-  double _balance = 250.50;
-  int _ongoing = 3;
-  double _earnings = 1250.75;
-  int _completed = 15;
+  // Real data from API
+  double _balance = 0.0;
+  int _ongoing = 0;
+  double _earnings = 0.0;
+  int _completed = 0;
+  List<Map<String, dynamic>> _pendingLoads = [];
+  List<Map<String, dynamic>> _recentTransactions = [];
 
-  // Mock pending loads
-  final List<Map<String, dynamic>> _mockPendingLoads = [
-    {'amount': 100, 'referenceNo': 'REF123', 'isConfirmed': false},
-    {'amount': 200, 'referenceNo': 'REF456', 'isConfirmed': false},
-  ];
+  bool _isLoading = true;
+  String? _error;
 
-  // Mock transactions
-  final List<Map<String, dynamic>> _mockTransactions = [
-    {
-      'referenceNo': 'REF123456',
-      'amount': 500.00,
-      'date': '2024-01-15 14:30',
-      'remarks': 'Load purchase',
-      'isConfirmed': true,
-    },
-    {
-      'referenceNo': 'REF789012',
-      'amount': 200.00,
-      'date': '2024-01-14 09:15',
-      'remarks': 'Load purchase',
-      'isConfirmed': true,
-    },
-    {
-      'referenceNo': 'REF345678',
-      'amount': 100.00,
-      'date': '2024-01-13 16:45',
-      'remarks': 'Load purchase',
-      'isConfirmed': false,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+    _loadTransactions();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final data = await DashboardService.fetchDashboardData();
+
+      if (mounted) {
+        setState(() {
+          _balance = data['balance'];
+          _ongoing = data['ongoing'];
+          _earnings = data['earnings'];
+          _completed = data['completed'];
+          _isLoading = false;
+        });
+        print(
+          '[DEBUG] Dashboard loaded: Balance: $_balance, Ongoing: $_ongoing, Earnings: $_earnings, Completed: $_completed',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+        print('[ERROR] Failed to load dashboard: $e');
+      }
+    }
+  }
+
+  Future<void> _loadTransactions() async {
+    try {
+      final transactions = await DashboardService.getLoadTransactions();
+
+      // Filter pending loads (unconfirmed transactions)
+      final pending = transactions
+          .where((tx) => tx['isConfirmed'] == false)
+          .toList();
+      final recent = transactions.take(3).toList();
+
+      if (mounted) {
+        setState(() {
+          _pendingLoads = pending;
+          _recentTransactions = recent;
+        });
+      }
+
+      print(
+        '[DEBUG] Loaded ${transactions.length} transactions, ${pending.length} pending',
+      );
+
+      // Save to local DB for offline access
+      await RiderOrdersDB.saveLoadTransactions(transactions);
+    } catch (e) {
+      print('[ERROR] Loading transactions: $e');
+      // Try to load from local DB as fallback
+      try {
+        final localTxs = await RiderOrdersDB.getLoadTransactions();
+        if (mounted && localTxs.isNotEmpty) {
+          setState(() {
+            _recentTransactions = localTxs.take(3).toList();
+          });
+          print('[DEBUG] Loaded ${localTxs.length} transactions from local DB');
+        }
+      } catch (dbError) {
+        print('[ERROR] Loading from local DB: $dbError');
+      }
+    }
+  }
+
+  Future<void> _refreshDashboard() async {
+    await _loadDashboardData();
+    await _loadTransactions();
+  }
 
   bool _isBalanceLow() {
     return _balance < 100;
   }
 
-  // Updated: Now opens PaymentWebViewPage instead of showing demo snackbar
   void _showTopUpModal() {
     showModalBottomSheet(
       context: context,
@@ -67,247 +128,321 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     ).then((amount) {
       if (amount != null) {
-        // Navigate to PaymentWebViewPage
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentWebViewPage(
-              paymentUrl: _buildPaymentUrl(amount),
-              onPaymentComplete: () {
-                // Refresh dashboard after successful payment
-                _refreshDashboard();
+        _processTopUp(amount);
+      }
+    });
+  }
 
-                // Show success message
+  Future<void> _processTopUp(int amount) async {
+    try {
+      final session = await UserSessionDB.getSession();
+      final riderId = session?['rider_id'] ?? '';
+      final mobileNo = session?['mobile_no'] ?? '';
+      final email = session?['email'] ?? '';
+
+      if (riderId.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('User session not found')));
+        return;
+      }
+
+      // TODO: Call postLoadRiderWallet API to get order number
+      // For now, use a mock order number
+      final orderNo = 'REF${DateTime.now().millisecondsSinceEpoch}';
+
+      final url =
+          '${ApiConfig.paymentStartLoadPurchase}?Id=16&PROC_ID=GCSH&amount=$amount&PhoneNumber=$mobileNo&email=$email&LoadRefNo=$orderNo';
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentWebViewPage(
+            paymentUrl: url,
+            onPaymentComplete: () async {
+              // Refresh data after payment
+              await _refreshDashboard();
+              if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Payment completed! Balance updated.'),
                     backgroundColor: Colors.green,
                   ),
                 );
-              },
-            ),
+              }
+            },
+          ),
+        ),
+      );
+
+      // Refresh after returning from payment
+      await _refreshDashboard();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Top up failed: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    });
-  }
-
-  // Build payment URL - Replace with actual URL from your API
-  String _buildPaymentUrl(int amount) {
-    // TODO: Replace with actual payment URL from your backend
-    // This is a sample URL for testing the WebView
-    return 'https://www.example.com/pay?amount=$amount';
-
-    // Actual implementation from riderV1 would be:
-    // final session = await UserSessionDB.getSession();
-    // final mobileNo = session?['mobile_no'] ?? '';
-    // final email = session?['email'] ?? '';
-    // final orderNo = 'REF${DateTime.now().millisecondsSinceEpoch}';
-    // return '${ApiConfig.paymentStartLoadPurchase}?Id=16&PROC_ID=GCSH&amount=$amount&PhoneNumber=$mobileNo&email=$email&LoadRefNo=$orderNo';
-  }
-
-  // Refresh dashboard data after payment
-  Future<void> _refreshDashboard() async {
-    // TODO: Implement actual refresh logic from API
-    // For now, just simulate with setState
-    setState(() {
-      // Example: Update balance after top up
-      // _balance += amount; // You would need to pass the amount
-    });
+    }
   }
 
   void _showTransactionHistory() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const TransactionHistoryPage()),
+    ).then((_) {
+      // Refresh when returning from transaction history
+      _refreshDashboard();
+    });
+  }
+
+  void _resumePayment(Map<String, dynamic> transaction) {
+    // TODO: Implement resume payment flow
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Resume payment for ${transaction['referenceNo']}'),
+        backgroundColor: Colors.orange,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF5D8AA8)),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _refreshDashboard,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5D8AA8),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Low balance warning banner
-          if (_isBalanceLow()) _buildBalanceWarningBanner(),
+      body: RefreshIndicator(
+        onRefresh: _refreshDashboard,
+        color: const Color(0xFF5D8AA8),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  // Low balance warning banner
+                  if (_isBalanceLow()) _buildBalanceWarningBanner(),
 
-          // Main content
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final bool isSmall = constraints.maxWidth < 400;
-                final double horizontalPadding = isSmall ? 8.0 : 24.0;
+                  const SizedBox(height: 20),
 
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    // Simulate refresh
-                    await Future.delayed(const Duration(seconds: 1));
-                    setState(() {});
-                  },
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                        vertical: 24.0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-
-                          // Load Balance Card
-                          DashboardCard(
-                            icon: Icons.account_balance_wallet,
-                            label: 'Load Balance',
-                            value: '₱${_balance.toStringAsFixed(2)}',
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF5D8AA8),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                    minimumSize: const Size(0, 36),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.add_circle_outline,
-                                    size: 18,
-                                  ),
-                                  label: const Text(
-                                    'Top Up',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  onPressed: _showTopUpModal,
-                                ),
-                                if (_mockPendingLoads.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '${_mockPendingLoads.length} Pending',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                  // Load Balance Card
+                  DashboardCard(
+                    icon: Icons.account_balance_wallet,
+                    label: 'Load Balance',
+                    value: '₱${_balance.toStringAsFixed(2)}',
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _showTopUpModal,
+                          icon: const Icon(Icons.add_circle_outline, size: 18),
+                          label: const Text(
+                            'Top Up',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF5D8AA8),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            onTap: _showTransactionHistory,
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Ongoing Orders Card
-                          DashboardCard(
-                            icon: Icons.timelapse,
-                            label: 'On Going',
-                            value: '$_ongoing Orders',
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Earnings Card
-                          DashboardCard(
-                            icon: Icons.attach_money,
-                            label: 'Earnings',
-                            value: '₱${_earnings.toStringAsFixed(2)}',
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Completed Orders Card
-                          DashboardCard(
-                            icon: Icons.check_circle,
-                            label: 'Completed',
-                            value: '$_completed Orders',
-                          ),
-
-                          const SizedBox(height: 30),
-
-                          // Recent Transactions Section
-                          Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Recent Transactions',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF5D8AA8),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _showTransactionHistory,
-                                  child: const Text('View All'),
-                                ),
-                              ],
+                            minimumSize: const Size(0, 36),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                        if (_pendingLoads.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${_pendingLoads.length} Pending',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-
-                          const SizedBox(height: 12),
-
-                          // Transaction List
-                          ..._mockTransactions
-                              .take(2)
-                              .map(
-                                (tx) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: TransactionCard(
-                                    referenceNo: tx['referenceNo'],
-                                    amount: tx['amount'],
-                                    date: tx['date'],
-                                    remarks: tx['remarks'],
-                                    isConfirmed: tx['isConfirmed'],
-                                    onTap: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Resume payment for ${tx['referenceNo']} (demo)',
-                                          ),
-                                          backgroundColor: Colors.orange,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
                         ],
-                      ),
+                      ],
+                    ),
+                    onTap: _showTransactionHistory,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Ongoing Orders Card
+                  DashboardCard(
+                    icon: Icons.timelapse,
+                    label: 'On Going',
+                    value: '$_ongoing Orders',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Earnings Card
+                  DashboardCard(
+                    icon: Icons.attach_money,
+                    label: 'Earnings',
+                    value: '₱${_earnings.toStringAsFixed(2)}',
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Completed Orders Card
+                  DashboardCard(
+                    icon: Icons.check_circle,
+                    label: 'Completed',
+                    value: '$_completed Orders',
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Recent Transactions Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Recent Transactions',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF5D8AA8),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _showTransactionHistory,
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF5D8AA8),
+                          ),
+                          child: const Text('View All'),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
+
+                  const SizedBox(height: 12),
+
+                  // Transaction List
+                  if (_recentTransactions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.receipt_long,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No recent transactions',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ..._recentTransactions.map(
+                      (tx) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: TransactionCard(
+                          referenceNo: tx['referenceNo'] ?? 'N/A',
+                          amount: (tx['amount'] as num?)?.toDouble() ?? 0.0,
+                          date: _formatDate(tx['date']),
+                          remarks: tx['remarks'] ?? 'Load purchase',
+                          isConfirmed: tx['isConfirmed'] == true,
+                          onTap: () {
+                            if (!tx['isConfirmed']) {
+                              _resumePayment(tx);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateString;
+    }
   }
 
   Widget _buildBalanceWarningBanner() {

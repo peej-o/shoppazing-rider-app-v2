@@ -1,11 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../api/api_client.dart';
 import '../api/api_config.dart';
 import '../database/user_session_db.dart';
 
 class DashboardService {
-  // Fetch dashboard data (balance, ongoing, earnings, completed)
+  // Fetch dashboard data from API
   static Future<Map<String, dynamic>> fetchDashboardData() async {
     try {
       final session = await UserSessionDB.getSession();
@@ -15,12 +14,19 @@ class DashboardService {
         throw Exception('User not logged in');
       }
 
+      print('[DEBUG] Fetching dashboard for userId: $userId');
+
       final url = ApiConfig.apiUri('/getriderdashboard');
+      final body = {'UserId': userId};
+
       final response = await ApiClient.post(
         url,
-        body: jsonEncode({'UserId': userId}),
+        body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
       );
+
+      print('[DEBUG] Dashboard response status: ${response.statusCode}');
+      print('[DEBUG] Dashboard response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -40,46 +46,16 @@ class DashboardService {
               : int.tryParse(data['Completed']?.toString() ?? '0') ?? 0,
         };
       } else {
-        throw Exception(
-          'Failed to load dashboard data: ${response.statusCode}',
-        );
+        throw Exception('Failed to load dashboard: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('[ERROR] DashboardService.fetchDashboardData: $e');
-      rethrow;
-    }
-  }
-
-  // Post load to rider wallet (top up)
-  static Future<Map<String, dynamic>> postLoadRiderWallet({
-    required String riderId,
-    required int amount,
-  }) async {
-    try {
-      final url = ApiConfig.apiUri('/PostLoadRiderWallet');
-      final response = await ApiClient.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'RiderId': riderId,
-          'IsCredit': true,
-          'Amount': amount,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to post load: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('[ERROR] DashboardService.postLoadRiderWallet: $e');
+      print('[ERROR] fetchDashboardData: $e');
       rethrow;
     }
   }
 
   // Get load transactions
-  static Future<List<dynamic>> getLoadTransactions() async {
+  static Future<List<Map<String, dynamic>>> getLoadTransactions() async {
     try {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
@@ -88,69 +64,76 @@ class DashboardService {
         throw Exception('User not logged in');
       }
 
+      print('[DEBUG] Fetching transactions for userId: $userId');
+
       final url = ApiConfig.apiUri('/getriderloadtrans');
+      final body = {'UserId': userId};
+
       final response = await ApiClient.post(
         url,
+        body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'UserId': userId}),
       );
 
+      print('[DEBUG] Transactions response status: ${response.statusCode}');
+      print('[DEBUG] Transactions response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final decodedResponse = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
 
         // Handle different response formats
-        if (decodedResponse is Map &&
-            decodedResponse.containsKey('LoadWallets')) {
-          return decodedResponse['LoadWallets'] as List;
-        } else if (decodedResponse is List) {
-          return decodedResponse;
-        } else if (decodedResponse is Map) {
-          return [decodedResponse];
-        } else {
-          return [];
+        List<Map<String, dynamic>> transactions = [];
+
+        if (data is Map && data.containsKey('LoadWallets')) {
+          final loadWallets = data['LoadWallets'];
+          if (loadWallets is List) {
+            transactions = loadWallets.map((tx) {
+              return {
+                'referenceNo':
+                    tx['ReferrenceNo'] ??
+                    tx['ReferenceNo'] ??
+                    tx['referenceNo'] ??
+                    '',
+                'amount': (tx['Amount'] ?? tx['amount'] ?? 0).toDouble(),
+                'date':
+                    tx['DateLoaded'] ??
+                    tx['dateLoaded'] ??
+                    DateTime.now().toString(),
+                'remarks': tx['Remarks'] ?? tx['remarks'] ?? 'Load purchase',
+                'isConfirmed': tx['IsConfirmed'] ?? tx['isConfirmed'] ?? false,
+              };
+            }).toList();
+          }
+        } else if (data is List) {
+          transactions = data.map((tx) {
+            return {
+              'referenceNo':
+                  tx['ReferrenceNo'] ??
+                  tx['ReferenceNo'] ??
+                  tx['referenceNo'] ??
+                  '',
+              'amount': (tx['Amount'] ?? tx['amount'] ?? 0).toDouble(),
+              'date':
+                  tx['DateLoaded'] ??
+                  tx['dateLoaded'] ??
+                  DateTime.now().toString(),
+              'remarks': tx['Remarks'] ?? tx['remarks'] ?? 'Load purchase',
+              'isConfirmed': tx['IsConfirmed'] ?? tx['isConfirmed'] ?? false,
+            };
+          }).toList();
         }
+
+        // Sort by date descending
+        transactions.sort((a, b) => b['date'].compareTo(a['date']));
+
+        print('[DEBUG] Found ${transactions.length} transactions');
+        return transactions;
       } else {
-        throw Exception(
-          'Failed to get load transactions: ${response.statusCode}',
-        );
+        throw Exception('Failed to load transactions: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('[ERROR] DashboardService.getLoadTransactions: $e');
-      rethrow;
+      print('[ERROR] getLoadTransactions: $e');
+      return [];
     }
-  }
-
-  // Check load status
-  static Future<Map<String, dynamic>> checkLoadStatus({
-    required String loadRefNo,
-    required String riderId,
-  }) async {
-    try {
-      final url = ApiConfig.apiUri('/postCheckRiderLoadStatus');
-      final response = await ApiClient.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'LoadRefNo': loadRefNo, 'RiderId': riderId}),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to check load status: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('[ERROR] DashboardService.checkLoadStatus: $e');
-      rethrow;
-    }
-  }
-
-  // Build payment URL for GCash
-  static String buildPaymentUrl({
-    required int amount,
-    required String mobileNo,
-    required String email,
-    required String loadRefNo,
-  }) {
-    return '${ApiConfig.paymentStartLoadPurchase}?Id=16&PROC_ID=GCSH&amount=$amount&PhoneNumber=$mobileNo&email=$email&LoadRefNo=$loadRefNo';
   }
 }

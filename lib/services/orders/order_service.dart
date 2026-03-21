@@ -5,8 +5,11 @@ import '../database/user_session_db.dart';
 import '../../models/entities/order.dart';
 
 class OrderService {
-  // 🔥 Toggle this to switch between MOCK and REAL API
+  // Toggle this to switch between MOCK and REAL API
   static const bool _useMockData = true; // Set to false to use real API
+
+  // DEBUG: Set this to true to see detailed logs
+  static const bool _debugMode = true;
 
   // Fetch orders from API
   static Future<List<OrderData>> fetchOrders({
@@ -14,20 +17,25 @@ class OrderService {
     double? lat,
     double? lng,
   }) async {
-    // 🔥 MOCK DATA FOR TESTING
+    // MOCK DATA FOR TESTING
     if (_useMockData) {
       print('[MOCK] Using mock order data');
       return _getMockOrders();
     }
 
-    // 🔥 REAL API CALL
+    // REAL API CALL
     try {
       final session = await UserSessionDB.getSession();
+      print('[DEBUG] ========== FETCH ORDERS ==========');
+      print('[DEBUG] Session exists: ${session != null}');
+      print('[DEBUG] RiderId: $riderId');
+      print('[DEBUG] Lat: ${lat ?? 0}, Lng: ${lng ?? 0}');
 
       final url = ApiConfig.apiUri('/getriderorders');
       final body = {'Lat': lat ?? 0, 'Lng': lng ?? 0, 'RiderId': riderId};
 
-      print('[DEBUG] Fetching orders: $body');
+      print('[DEBUG] URL: $url');
+      print('[DEBUG] Request body: $body');
 
       final response = await ApiClient.post(
         url,
@@ -35,88 +43,76 @@ class OrderService {
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print(
+        '[DEBUG] Response body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}...',
+      );
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
 
+        print('[DEBUG] Parsed data type: ${data.runtimeType}');
+
+        if (_debugMode && data is Map) {
+          print('[DEBUG] Data keys: ${data.keys}');
+        }
+
+        // Handle different response formats
         if (data is Map && data['OrderHeaders'] is List) {
-          var orders = (data['OrderHeaders'] as List)
+          final orders = (data['OrderHeaders'] as List)
               .map<OrderData>((json) => OrderData.fromJson(json))
               .toList();
-
-          // 🔥 TEMP: Add chat data for testing (optional)
+          print('[DEBUG] Found ${orders.length} orders in OrderHeaders');
           if (orders.isNotEmpty) {
-            orders = orders.map((order) {
-              // Add chat fields to first 3 orders for testing
-              if (order.serverHeaderId == 123451 ||
-                  order.serverHeaderId == 55555 ||
-                  order.serverHeaderId == 67890) {
-                return OrderData(
-                  serverHeaderId: order.serverHeaderId,
-                  orderNumber: order.orderNumber,
-                  status: order.status,
-                  dateTimeCreated: order.dateTimeCreated,
-                  storeName: order.storeName,
-                  storeImageUrl: order.storeImageUrl,
-                  storeAddress: order.storeAddress,
-                  customerName: order.customerName,
-                  customerAddress: order.customerAddress,
-                  customerMobileNo: order.customerMobileNo,
-                  storeLat: order.storeLat,
-                  storeLng: order.storeLng,
-                  customerLat: order.customerLat,
-                  customerLng: order.customerLng,
-                  deliveryFee: order.deliveryFee,
-                  onlineServiceCharge: order.onlineServiceCharge,
-                  subTotal: order.subTotal,
-                  totalDue: order.totalDue,
-                  rawDetails: order.rawDetails,
-                  assignedTo: order.assignedTo,
-                  // 🔥 Add test chat data
-                  OtherChatUserFirebaseUID:
-                      'test_customer_${order.serverHeaderId}',
-                  OtherChatUserName: order.customerName,
-                  OtherChatUserId: 'test_user_${order.serverHeaderId}',
-                  customerPin: order.customerPin,
-                  isPaid: order.isPaid,
-                  isManualDelivered: order.isManualDelivered,
-                  isOrderRated: order.isOrderRated,
-                  paymentTypeId: order.paymentTypeId,
-                  onlinePaymentTypeId: order.onlinePaymentTypeId,
-                  useLoyaltyPoints: order.useLoyaltyPoints,
-                  saleHeaderId: order.saleHeaderId,
-                  redeemedCash: order.redeemedCash,
-                  dfDiscount: order.dfDiscount,
-                  riderProfilePic: order.riderProfilePic,
-                  riderFullName: order.riderFullName,
-                  riderPlateNo: order.riderPlateNo,
-                  riderDriversLicenseNo: order.riderDriversLicenseNo,
-                  riderUserId: order.riderUserId,
-                  riderLat: order.riderLat,
-                  riderLng: order.riderLng,
-                );
-              }
-              return order;
-            }).toList();
+            print('[DEBUG] First order status: ${orders.first.status}');
+            print('[DEBUG] First order number: ${orders.first.orderNumber}');
           }
-
+          print('[DEBUG] ===================================');
           return orders;
+        } else if (data is List) {
+          final orders = data
+              .map<OrderData>((json) => OrderData.fromJson(json))
+              .toList();
+          print('[DEBUG] Found ${orders.length} orders in list');
+          print('[DEBUG] ===================================');
+          return orders;
+        } else if (data is Map && data['data'] is List) {
+          final orders = (data['data'] as List)
+              .map<OrderData>((json) => OrderData.fromJson(json))
+              .toList();
+          print('[DEBUG] Found ${orders.length} orders in data');
+          print('[DEBUG] ===================================');
+          return orders;
+        } else {
+          print('[DEBUG] Unexpected response format');
+          print('[DEBUG] ===================================');
+          if (_debugMode) {
+            print('[DEBUG] Full response: $data');
+          }
+          return [];
         }
+      } else {
+        print('[DEBUG] HTTP error: ${response.statusCode}');
+        print('[DEBUG] Error body: ${response.body}');
+        print('[DEBUG] ===================================');
+        return [];
       }
-      return [];
     } catch (e) {
-      print('[ERROR] fetchOrders: $e');
+      print('[ERROR] fetchOrders exception: $e');
+      print('[ERROR] Stack trace: ${StackTrace.current}');
+      print('[DEBUG] ===================================');
       return [];
     }
   }
 
-  // 🔥 MOCK ORDERS DATA
+  // MOCK ORDERS DATA (keep for testing)
   static List<OrderData> _getMockOrders() {
     return [
       // Pending order (can be accepted)
       OrderData(
         serverHeaderId: 123451,
         orderNumber: '123451',
-        status: '1', // Pending
+        status: '1',
         dateTimeCreated: '14:30',
         storeName: 'Mang Inasal',
         storeImageUrl: '',
@@ -146,7 +142,7 @@ class OrderService {
       OrderData(
         serverHeaderId: 33333,
         orderNumber: '33333',
-        status: '4', // Ready for pickup
+        status: '4',
         dateTimeCreated: '13:30',
         storeName: 'Starbucks',
         storeImageUrl: '',
@@ -176,7 +172,7 @@ class OrderService {
       OrderData(
         serverHeaderId: 55555,
         orderNumber: '55555',
-        status: '6', // In Transit
+        status: '6',
         dateTimeCreated: '16:30',
         storeName: 'Chowking',
         storeImageUrl: '',
@@ -207,7 +203,7 @@ class OrderService {
       OrderData(
         serverHeaderId: 67890,
         orderNumber: '67890',
-        status: '3', // Preparing
+        status: '3',
         dateTimeCreated: '15:45',
         storeName: 'Jollibee',
         storeImageUrl: '',
@@ -237,7 +233,7 @@ class OrderService {
       OrderData(
         serverHeaderId: 54321,
         orderNumber: '54321',
-        status: '7', // Delivered
+        status: '7',
         dateTimeCreated: '12:00',
         storeName: 'McDonald\'s',
         storeImageUrl: '',
@@ -268,7 +264,7 @@ class OrderService {
       OrderData(
         serverHeaderId: 98765,
         orderNumber: '98765',
-        status: '8', // Cancelled
+        status: '8',
         dateTimeCreated: '10:30',
         storeName: 'KFC',
         storeImageUrl: '',
@@ -297,17 +293,23 @@ class OrderService {
 
   // Accept order
   static Future<bool> acceptOrder(OrderData order) async {
-    // 🔥 MOCK: Simulate success
     if (_useMockData) {
       print('[MOCK] Accepting order: ${order.orderNumber}');
       await Future.delayed(const Duration(seconds: 1));
       return true;
     }
 
-    // 🔥 REAL API CALL
     try {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
+
+      print('[DEBUG] ========== ACCEPT ORDER ==========');
+      print('[DEBUG] OrderHeaderId: ${order.serverHeaderId}');
+      print('[DEBUG] OrderNo: ${order.orderNumber}');
+      print('[DEBUG] UserId: $userId');
+      print(
+        '[DEBUG] TotalAmount: ${order.subTotal + order.onlineServiceCharge + order.deliveryFee}',
+      );
 
       final url = ApiConfig.apiUri('/postacceptriderorder');
       final body = {
@@ -318,36 +320,49 @@ class OrderService {
             order.subTotal + order.onlineServiceCharge + order.deliveryFee,
       };
 
+      print('[DEBUG] URL: $url');
+      print('[DEBUG] Request body: $body');
+
       final response = await ApiClient.post(
         url,
         body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
+        print('[DEBUG] Status code from response: ${data['status_code']}');
+        print('[DEBUG] ===================================');
         return data['status_code'] == 200;
       }
+      print('[DEBUG] ===================================');
       return false;
     } catch (e) {
       print('[ERROR] acceptOrder: $e');
+      print('[DEBUG] ===================================');
       return false;
     }
   }
 
   // Cancel order
   static Future<bool> cancelOrder(int orderHeaderId, String reason) async {
-    // 🔥 MOCK: Simulate success
     if (_useMockData) {
       print('[MOCK] Cancelling order: $orderHeaderId, reason: $reason');
       await Future.delayed(const Duration(seconds: 1));
       return true;
     }
 
-    // 🔥 REAL API CALL
     try {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
+
+      print('[DEBUG] ========== CANCEL ORDER ==========');
+      print('[DEBUG] OrderHeaderId: $orderHeaderId');
+      print('[DEBUG] UserId: $userId');
+      print('[DEBUG] CancelReason: $reason');
 
       final url = ApiConfig.apiUri('/postcancelriderorder');
       final body = {
@@ -356,19 +371,29 @@ class OrderService {
         'CancelReason': reason,
       };
 
+      print('[DEBUG] URL: $url');
+      print('[DEBUG] Request body: $body');
+
       final response = await ApiClient.post(
         url,
         body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
+        print('[DEBUG] Status code from response: ${data['status_code']}');
+        print('[DEBUG] ===================================');
         return data['status_code'] == 200;
       }
+      print('[DEBUG] ===================================');
       return false;
     } catch (e) {
       print('[ERROR] cancelOrder: $e');
+      print('[DEBUG] ===================================');
       return false;
     }
   }
@@ -379,17 +404,21 @@ class OrderService {
     String pin,
     bool isPaid,
   ) async {
-    // 🔥 MOCK: Simulate success (accept any 4-digit PIN)
     if (_useMockData) {
       print('[MOCK] Picking up order: $orderNo with PIN: $pin');
       await Future.delayed(const Duration(seconds: 1));
-      return pin.length == 4; // Accept any 4-digit PIN for testing
+      return pin.length == 4;
     }
 
-    // 🔥 REAL API CALL
     try {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
+
+      print('[DEBUG] ========== PICKUP ORDER ==========');
+      print('[DEBUG] OrderNo: $orderNo');
+      print('[DEBUG] UserId: $userId');
+      print('[DEBUG] PIN: $pin');
+      print('[DEBUG] IsPaid: $isPaid');
 
       final url = ApiConfig.apiUri('/PostPickupOrderByPIN');
       final body = {
@@ -401,19 +430,29 @@ class OrderService {
         'OrderPIN': pin,
       };
 
+      print('[DEBUG] URL: $url');
+      print('[DEBUG] Request body: $body');
+
       final response = await ApiClient.post(
         url,
         body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
+        print('[DEBUG] Status code from response: ${data['status_code']}');
+        print('[DEBUG] ===================================');
         return data['status_code'] == 200;
       }
+      print('[DEBUG] ===================================');
       return false;
     } catch (e) {
       print('[ERROR] pickupOrder: $e');
+      print('[DEBUG] ===================================');
       return false;
     }
   }
@@ -426,17 +465,23 @@ class OrderService {
     double deliveryFee,
     double totalAmount,
   ) async {
-    // 🔥 MOCK: Simulate success (accept any 4-digit PIN)
     if (_useMockData) {
       print('[MOCK] Delivering order: $orderNo with PIN: $pin');
       await Future.delayed(const Duration(seconds: 1));
-      return pin.length == 4; // Accept any 4-digit PIN for testing
+      return pin.length == 4;
     }
 
-    // 🔥 REAL API CALL
     try {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
+
+      print('[DEBUG] ========== DELIVER ORDER ==========');
+      print('[DEBUG] OrderHeaderId: $orderHeaderId');
+      print('[DEBUG] OrderNo: $orderNo');
+      print('[DEBUG] UserId: $userId');
+      print('[DEBUG] PIN: $pin');
+      print('[DEBUG] DeliveryFee: $deliveryFee');
+      print('[DEBUG] TotalAmount: $totalAmount');
 
       final url = ApiConfig.apiUri('/postdeliverorder');
       final body = {
@@ -448,19 +493,29 @@ class OrderService {
         'TotalAmount': totalAmount,
       };
 
+      print('[DEBUG] URL: $url');
+      print('[DEBUG] Request body: $body');
+
       final response = await ApiClient.post(
         url,
         body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('[DEBUG] Response status: ${response.statusCode}');
+      print('[DEBUG] Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
+        print('[DEBUG] Status code from response: ${data['status_code']}');
+        print('[DEBUG] ===================================');
         return data['status_code'] == 200;
       }
+      print('[DEBUG] ===================================');
       return false;
     } catch (e) {
       print('[ERROR] deliverOrder: $e');
+      print('[DEBUG] ===================================');
       return false;
     }
   }
