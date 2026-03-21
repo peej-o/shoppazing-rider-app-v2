@@ -7,6 +7,7 @@ import '../order_management/order_details_screen.dart';
 import '../../services/orders/order_service.dart';
 import '../../services/database/user_session_db.dart';
 import '../../services/device/device_service.dart';
+import '../../services/dashboard/dashboard_service.dart'; // Add this import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,10 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isLoading = true;
   String? _error;
 
+  // Balance from dashboard
+  double _balance = 0.0;
+  bool _balanceLoading = false;
+
   // For testing location override
   static double? testLat;
   static double? testLng;
@@ -32,15 +37,39 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadOrders();
+    _fetchBalance();
 
     // Auto-refresh every 15 seconds (like riderV1)
     Timer.periodic(const Duration(seconds: 15), (timer) {
       if (mounted) {
         _loadOrders();
+        _fetchBalance();
       } else {
         timer.cancel();
       }
     });
+  }
+
+  Future<void> _fetchBalance() async {
+    if (_balanceLoading) return;
+    _balanceLoading = true;
+
+    try {
+      final data = await DashboardService.fetchDashboardData();
+      if (mounted) {
+        setState(() {
+          _balance = data['balance'];
+          _balanceLoading = false;
+        });
+      }
+    } catch (e) {
+      print('[ERROR] Error fetching balance: $e');
+      _balanceLoading = false;
+    }
+  }
+
+  bool _isBalanceLow() {
+    return _balance < 100;
   }
 
   Future<void> _loadOrders() async {
@@ -136,6 +165,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (success && mounted) {
       await _loadOrders(); // Refresh orders
+      await _fetchBalance(); // Refresh balance as well
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Order ${action}ed successfully!'),
@@ -152,6 +182,17 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _navigateToDashboard() {
+    // This will be handled by the bottom navigation
+    // For now, just show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Go to Dashboard tab to top up'),
+        backgroundColor: Color(0xFF5D8AA8),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -163,12 +204,12 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       body: Column(
         children: [
-          BalanceWarningBanner(
-            balance: 50.0, // TODO: Get from dashboard service
-            onTap: () {
-              // Navigate to dashboard
-            },
-          ),
+          // Low balance warning banner - now with real balance
+          if (_isBalanceLow())
+            BalanceWarningBanner(
+              balance: _balance,
+              onTap: _navigateToDashboard,
+            ),
 
           TabBar(
             controller: _tabController,
@@ -279,13 +320,13 @@ class _HomeScreenState extends State<HomeScreen>
                     showAccept: canShowAccept,
                     onAccept: (newStatus) async {
                       await _loadOrders();
+                      await _fetchBalance();
                     },
                   ),
                 ),
               );
             },
             onAccept: () async {
-              // Show confirmation dialog
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(

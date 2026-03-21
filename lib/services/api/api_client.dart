@@ -49,20 +49,19 @@ class ApiClient {
     bool skipAuth = false,
   }) async {
     try {
+      print('[API] POST: $url');
+      print('[API] Body: $body');
+
       final mergedHeaders = await _buildHeaders(headers, skipAuth: skipAuth);
       final response = await http.post(url, headers: mergedHeaders, body: body);
+
+      print('[API] Response status: ${response.statusCode}');
+      print('[API] Response body: ${response.body}');
+
       await _handleAuthFailure(response);
       return response;
-    } on SocketException catch (e) {
-      throw NetworkException(NetworkService.getNetworkErrorMessage(e));
-    } on HttpException catch (e) {
-      throw NetworkException(NetworkService.getNetworkErrorMessage(e));
     } catch (e) {
-      if (e.toString().contains('Failed host lookup') ||
-          e.toString().contains('Connection refused') ||
-          e.toString().contains('Connection timed out')) {
-        throw NetworkException(NetworkService.getNetworkErrorMessage(e));
-      }
+      print('[API] Error: $e');
       rethrow;
     }
   }
