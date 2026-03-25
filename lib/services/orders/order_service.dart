@@ -6,10 +6,14 @@ import '../../models/entities/order.dart';
 
 class OrderService {
   // Toggle this to switch between MOCK and REAL API
-  static const bool _useMockData = true; // Set to false to use real API
+  static const bool _useMockData = false; // Set to false to use real API
 
   // DEBUG: Set this to true to see detailed logs
-  static const bool _debugMode = true;
+  static const bool _debugMode = false;
+
+  // DEBUG: Separate toggle for fetch orders (to reduce flooding)
+  static const bool _debugFetchOrders =
+      false; // Set to true to see fetch orders logs
 
   // Fetch orders from API
   static Future<List<OrderData>> fetchOrders({
@@ -19,23 +23,28 @@ class OrderService {
   }) async {
     // MOCK DATA FOR TESTING
     if (_useMockData) {
-      print('[MOCK] Using mock order data');
+      if (_debugFetchOrders) print('[MOCK] Using mock order data');
       return _getMockOrders();
     }
 
     // REAL API CALL
     try {
       final session = await UserSessionDB.getSession();
-      print('[DEBUG] ========== FETCH ORDERS ==========');
-      print('[DEBUG] Session exists: ${session != null}');
-      print('[DEBUG] RiderId: $riderId');
-      print('[DEBUG] Lat: ${lat ?? 0}, Lng: ${lng ?? 0}');
+
+      if (_debugFetchOrders) {
+        print('[DEBUG] ========== FETCH ORDERS ==========');
+        print('[DEBUG] Session exists: ${session != null}');
+        print('[DEBUG] RiderId: $riderId');
+        print('[DEBUG] Lat: ${lat ?? 0}, Lng: ${lng ?? 0}');
+      }
 
       final url = ApiConfig.apiUri('/getriderorders');
       final body = {'Lat': lat ?? 0, 'Lng': lng ?? 0, 'RiderId': riderId};
 
-      print('[DEBUG] URL: $url');
-      print('[DEBUG] Request body: $body');
+      if (_debugFetchOrders) {
+        print('[DEBUG] URL: $url');
+        print('[DEBUG] Request body: $body');
+      }
 
       final response = await ApiClient.post(
         url,
@@ -43,64 +52,69 @@ class OrderService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print(
-        '[DEBUG] Response body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}...',
-      );
+      if (_debugFetchOrders) {
+        print('[DEBUG] Response status: ${response.statusCode}');
+        print(
+          '[DEBUG] Response body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}...',
+        );
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-
-        print('[DEBUG] Parsed data type: ${data.runtimeType}');
-
-        if (_debugMode && data is Map) {
-          print('[DEBUG] Data keys: ${data.keys}');
-        }
 
         // Handle different response formats
         if (data is Map && data['OrderHeaders'] is List) {
           final orders = (data['OrderHeaders'] as List)
               .map<OrderData>((json) => OrderData.fromJson(json))
               .toList();
-          print('[DEBUG] Found ${orders.length} orders in OrderHeaders');
-          if (orders.isNotEmpty) {
-            print('[DEBUG] First order status: ${orders.first.status}');
-            print('[DEBUG] First order number: ${orders.first.orderNumber}');
+
+          if (_debugFetchOrders) {
+            print('[DEBUG] Found ${orders.length} orders in OrderHeaders');
+            if (orders.isNotEmpty) {
+              print('[DEBUG] First order status: ${orders.first.status}');
+              print('[DEBUG] First order number: ${orders.first.orderNumber}');
+            }
+            print('[DEBUG] ===================================');
           }
-          print('[DEBUG] ===================================');
           return orders;
         } else if (data is List) {
           final orders = data
               .map<OrderData>((json) => OrderData.fromJson(json))
               .toList();
-          print('[DEBUG] Found ${orders.length} orders in list');
-          print('[DEBUG] ===================================');
+          if (_debugFetchOrders) {
+            print('[DEBUG] Found ${orders.length} orders in list');
+            print('[DEBUG] ===================================');
+          }
           return orders;
         } else if (data is Map && data['data'] is List) {
           final orders = (data['data'] as List)
               .map<OrderData>((json) => OrderData.fromJson(json))
               .toList();
-          print('[DEBUG] Found ${orders.length} orders in data');
-          print('[DEBUG] ===================================');
+          if (_debugFetchOrders) {
+            print('[DEBUG] Found ${orders.length} orders in data');
+            print('[DEBUG] ===================================');
+          }
           return orders;
         } else {
-          print('[DEBUG] Unexpected response format');
-          print('[DEBUG] ===================================');
-          if (_debugMode) {
-            print('[DEBUG] Full response: $data');
+          if (_debugFetchOrders) {
+            print('[DEBUG] Unexpected response format');
+            print('[DEBUG] ===================================');
           }
           return [];
         }
       } else {
-        print('[DEBUG] HTTP error: ${response.statusCode}');
-        print('[DEBUG] Error body: ${response.body}');
-        print('[DEBUG] ===================================');
+        if (_debugFetchOrders) {
+          print('[DEBUG] HTTP error: ${response.statusCode}');
+          print('[DEBUG] Error body: ${response.body}');
+          print('[DEBUG] ===================================');
+        }
         return [];
       }
     } catch (e) {
-      print('[ERROR] fetchOrders exception: $e');
-      print('[ERROR] Stack trace: ${StackTrace.current}');
-      print('[DEBUG] ===================================');
+      if (_debugFetchOrders) {
+        print('[ERROR] fetchOrders exception: $e');
+        print('[DEBUG] ===================================');
+      }
       return [];
     }
   }
@@ -303,13 +317,15 @@ class OrderService {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
 
-      print('[DEBUG] ========== ACCEPT ORDER ==========');
-      print('[DEBUG] OrderHeaderId: ${order.serverHeaderId}');
-      print('[DEBUG] OrderNo: ${order.orderNumber}');
-      print('[DEBUG] UserId: $userId');
-      print(
-        '[DEBUG] TotalAmount: ${order.subTotal + order.onlineServiceCharge + order.deliveryFee}',
-      );
+      if (_debugMode) {
+        print('[DEBUG] ========== ACCEPT ORDER ==========');
+        print('[DEBUG] OrderHeaderId: ${order.serverHeaderId}');
+        print('[DEBUG] OrderNo: ${order.orderNumber}');
+        print('[DEBUG] UserId: $userId');
+        print(
+          '[DEBUG] TotalAmount: ${order.subTotal + order.onlineServiceCharge + order.deliveryFee}',
+        );
+      }
 
       final url = ApiConfig.apiUri('/postacceptriderorder');
       final body = {
@@ -320,8 +336,10 @@ class OrderService {
             order.subTotal + order.onlineServiceCharge + order.deliveryFee,
       };
 
-      print('[DEBUG] URL: $url');
-      print('[DEBUG] Request body: $body');
+      if (_debugMode) {
+        print('[DEBUG] URL: $url');
+        print('[DEBUG] Request body: $body');
+      }
 
       final response = await ApiClient.post(
         url,
@@ -329,20 +347,23 @@ class OrderService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print('[DEBUG] Response body: ${response.body}');
+      if (_debugMode) {
+        print('[DEBUG] Response status: ${response.statusCode}');
+        print('[DEBUG] Response body: ${response.body}');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        print('[DEBUG] Status code from response: ${data['status_code']}');
-        print('[DEBUG] ===================================');
+        if (_debugMode) {
+          print('[DEBUG] Status code from response: ${data['status_code']}');
+          print('[DEBUG] ===================================');
+        }
         return data['status_code'] == 200;
       }
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[DEBUG] ===================================');
       return false;
     } catch (e) {
-      print('[ERROR] acceptOrder: $e');
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[ERROR] acceptOrder: $e');
       return false;
     }
   }
@@ -359,10 +380,12 @@ class OrderService {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
 
-      print('[DEBUG] ========== CANCEL ORDER ==========');
-      print('[DEBUG] OrderHeaderId: $orderHeaderId');
-      print('[DEBUG] UserId: $userId');
-      print('[DEBUG] CancelReason: $reason');
+      if (_debugMode) {
+        print('[DEBUG] ========== CANCEL ORDER ==========');
+        print('[DEBUG] OrderHeaderId: $orderHeaderId');
+        print('[DEBUG] UserId: $userId');
+        print('[DEBUG] CancelReason: $reason');
+      }
 
       final url = ApiConfig.apiUri('/postcancelriderorder');
       final body = {
@@ -371,8 +394,10 @@ class OrderService {
         'CancelReason': reason,
       };
 
-      print('[DEBUG] URL: $url');
-      print('[DEBUG] Request body: $body');
+      if (_debugMode) {
+        print('[DEBUG] URL: $url');
+        print('[DEBUG] Request body: $body');
+      }
 
       final response = await ApiClient.post(
         url,
@@ -380,20 +405,23 @@ class OrderService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print('[DEBUG] Response body: ${response.body}');
+      if (_debugMode) {
+        print('[DEBUG] Response status: ${response.statusCode}');
+        print('[DEBUG] Response body: ${response.body}');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        print('[DEBUG] Status code from response: ${data['status_code']}');
-        print('[DEBUG] ===================================');
+        if (_debugMode) {
+          print('[DEBUG] Status code from response: ${data['status_code']}');
+          print('[DEBUG] ===================================');
+        }
         return data['status_code'] == 200;
       }
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[DEBUG] ===================================');
       return false;
     } catch (e) {
-      print('[ERROR] cancelOrder: $e');
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[ERROR] cancelOrder: $e');
       return false;
     }
   }
@@ -414,11 +442,13 @@ class OrderService {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
 
-      print('[DEBUG] ========== PICKUP ORDER ==========');
-      print('[DEBUG] OrderNo: $orderNo');
-      print('[DEBUG] UserId: $userId');
-      print('[DEBUG] PIN: $pin');
-      print('[DEBUG] IsPaid: $isPaid');
+      if (_debugMode) {
+        print('[DEBUG] ========== PICKUP ORDER ==========');
+        print('[DEBUG] OrderNo: $orderNo');
+        print('[DEBUG] UserId: $userId');
+        print('[DEBUG] PIN: $pin');
+        print('[DEBUG] IsPaid: $isPaid');
+      }
 
       final url = ApiConfig.apiUri('/PostPickupOrderByPIN');
       final body = {
@@ -430,8 +460,10 @@ class OrderService {
         'OrderPIN': pin,
       };
 
-      print('[DEBUG] URL: $url');
-      print('[DEBUG] Request body: $body');
+      if (_debugMode) {
+        print('[DEBUG] URL: $url');
+        print('[DEBUG] Request body: $body');
+      }
 
       final response = await ApiClient.post(
         url,
@@ -439,20 +471,23 @@ class OrderService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print('[DEBUG] Response body: ${response.body}');
+      if (_debugMode) {
+        print('[DEBUG] Response status: ${response.statusCode}');
+        print('[DEBUG] Response body: ${response.body}');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        print('[DEBUG] Status code from response: ${data['status_code']}');
-        print('[DEBUG] ===================================');
+        if (_debugMode) {
+          print('[DEBUG] Status code from response: ${data['status_code']}');
+          print('[DEBUG] ===================================');
+        }
         return data['status_code'] == 200;
       }
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[DEBUG] ===================================');
       return false;
     } catch (e) {
-      print('[ERROR] pickupOrder: $e');
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[ERROR] pickupOrder: $e');
       return false;
     }
   }
@@ -475,13 +510,15 @@ class OrderService {
       final session = await UserSessionDB.getSession();
       final userId = session?['user_id'] ?? '';
 
-      print('[DEBUG] ========== DELIVER ORDER ==========');
-      print('[DEBUG] OrderHeaderId: $orderHeaderId');
-      print('[DEBUG] OrderNo: $orderNo');
-      print('[DEBUG] UserId: $userId');
-      print('[DEBUG] PIN: $pin');
-      print('[DEBUG] DeliveryFee: $deliveryFee');
-      print('[DEBUG] TotalAmount: $totalAmount');
+      if (_debugMode) {
+        print('[DEBUG] ========== DELIVER ORDER ==========');
+        print('[DEBUG] OrderHeaderId: $orderHeaderId');
+        print('[DEBUG] OrderNo: $orderNo');
+        print('[DEBUG] UserId: $userId');
+        print('[DEBUG] PIN: $pin');
+        print('[DEBUG] DeliveryFee: $deliveryFee');
+        print('[DEBUG] TotalAmount: $totalAmount');
+      }
 
       final url = ApiConfig.apiUri('/postdeliverorder');
       final body = {
@@ -493,8 +530,10 @@ class OrderService {
         'TotalAmount': totalAmount,
       };
 
-      print('[DEBUG] URL: $url');
-      print('[DEBUG] Request body: $body');
+      if (_debugMode) {
+        print('[DEBUG] URL: $url');
+        print('[DEBUG] Request body: $body');
+      }
 
       final response = await ApiClient.post(
         url,
@@ -502,20 +541,23 @@ class OrderService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print('[DEBUG] Response body: ${response.body}');
+      if (_debugMode) {
+        print('[DEBUG] Response status: ${response.statusCode}');
+        print('[DEBUG] Response body: ${response.body}');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        print('[DEBUG] Status code from response: ${data['status_code']}');
-        print('[DEBUG] ===================================');
+        if (_debugMode) {
+          print('[DEBUG] Status code from response: ${data['status_code']}');
+          print('[DEBUG] ===================================');
+        }
         return data['status_code'] == 200;
       }
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[DEBUG] ===================================');
       return false;
     } catch (e) {
-      print('[ERROR] deliverOrder: $e');
-      print('[DEBUG] ===================================');
+      if (_debugMode) print('[ERROR] deliverOrder: $e');
       return false;
     }
   }

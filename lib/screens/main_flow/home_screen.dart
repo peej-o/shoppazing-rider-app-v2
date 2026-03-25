@@ -7,7 +7,7 @@ import '../order_management/order_details_screen.dart';
 import '../../services/orders/order_service.dart';
 import '../../services/database/user_session_db.dart';
 import '../../services/device/device_service.dart';
-import '../../services/dashboard/dashboard_service.dart'; // Add this import
+import '../../services/dashboard/dashboard_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,11 +24,9 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isLoading = true;
   String? _error;
 
-  // Balance from dashboard
   double _balance = 0.0;
   bool _balanceLoading = false;
 
-  // For testing location override
   static double? testLat;
   static double? testLng;
 
@@ -38,16 +36,6 @@ class _HomeScreenState extends State<HomeScreen>
     _tabController = TabController(length: 3, vsync: this);
     _loadOrders();
     _fetchBalance();
-
-    // Auto-refresh every 15 seconds (like riderV1)
-    Timer.periodic(const Duration(seconds: 15), (timer) {
-      if (mounted) {
-        _loadOrders();
-        _fetchBalance();
-      } else {
-        timer.cancel();
-      }
-    });
   }
 
   Future<void> _fetchBalance() async {
@@ -91,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen>
         return;
       }
 
-      // Get current location
       double? lat = testLat;
       double? lng = testLng;
 
@@ -164,8 +151,8 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     if (success && mounted) {
-      await _loadOrders(); // Refresh orders
-      await _fetchBalance(); // Refresh balance as well
+      await _loadOrders();
+      await _fetchBalance();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Order ${action}ed successfully!'),
@@ -183,8 +170,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _navigateToDashboard() {
-    // This will be handled by the bottom navigation
-    // For now, just show a message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Go to Dashboard tab to top up'),
@@ -204,7 +189,6 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       body: Column(
         children: [
-          // Low balance warning banner - now with real balance
           if (_isBalanceLow())
             BalanceWarningBanner(
               balance: _balance,
@@ -357,3 +341,267 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 }
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import '../../models/entities/order.dart';
+// import '../../widgets/cards/order_card.dart';
+// import '../../widgets/common/balance_warning_banner.dart';
+// import '../order_management/order_details_screen.dart';
+// import '../../services/orders/order_service.dart';
+// import '../../services/database/user_session_db.dart';
+// import '../../services/device/device_service.dart';
+// import '../../services/dashboard/dashboard_service.dart';
+// import '../../providers/order_providers.dart';
+
+// class HomeScreen extends ConsumerStatefulWidget {
+//   const HomeScreen({super.key});
+
+//   @override
+//   ConsumerState<HomeScreen> createState() => _HomeScreenState();
+// }
+
+// class _HomeScreenState extends ConsumerState<HomeScreen>
+//     with SingleTickerProviderStateMixin {
+//   late TabController _tabController;
+
+//   double _balance = 0.0;
+//   bool _balanceLoading = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _tabController = TabController(length: 3, vsync: this);
+//     _fetchBalance();
+//   }
+
+//   Future<void> _fetchBalance() async {
+//     if (_balanceLoading) return;
+//     _balanceLoading = true;
+
+//     try {
+//       final data = await DashboardService.fetchDashboardData();
+//       if (mounted) {
+//         setState(() {
+//           _balance = data['balance'];
+//           _balanceLoading = false;
+//         });
+//       }
+//     } catch (e) {
+//       print('[ERROR] Error fetching balance: $e');
+//       _balanceLoading = false;
+//     }
+//   }
+
+//   bool _isBalanceLow() => _balance < 100;
+
+//   void _navigateToDashboard() {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(
+//         content: Text('Go to Dashboard tab to top up'),
+//         backgroundColor: Color(0xFF5D8AA8),
+//       ),
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     _tabController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     // Watch real-time orders from Firebase
+//     final ordersAsync = ref.watch(realtimeOrdersProvider);
+//     final newOrdersCount = ref.watch(newOrdersCountProvider);
+
+//     return Scaffold(
+//       body: Column(
+//         children: [
+//           if (_isBalanceLow())
+//             BalanceWarningBanner(
+//               balance: _balance,
+//               onTap: _navigateToDashboard,
+//             ),
+
+//           Container(
+//             color: Colors.white,
+//             child: TabBar(
+//               controller: _tabController,
+//               labelColor: const Color(0xFF5D8AA8),
+//               unselectedLabelColor: Colors.grey,
+//               indicatorColor: const Color(0xFF5D8AA8),
+//               tabs: [
+//                 Tab(
+//                   text: 'Active',
+//                   icon: newOrdersCount > 0
+//                       ? Badge(
+//                           label: Text('$newOrdersCount'),
+//                           child: const Icon(Icons.notifications_active),
+//                         )
+//                       : null,
+//                 ),
+//                 const Tab(text: 'Cancelled'),
+//                 const Tab(text: 'Completed'),
+//               ],
+//             ),
+//           ),
+
+//           Expanded(
+//             child: ordersAsync.when(
+//               data: (orders) {
+//                 final activeOrders = orders
+//                     .where((o) => o.status != '7' && o.status != '8')
+//                     .toList();
+//                 final cancelledOrders = orders
+//                     .where((o) => o.status == '8')
+//                     .toList();
+//                 final completedOrders = orders
+//                     .where((o) => o.status == '7')
+//                     .toList();
+
+//                 return TabBarView(
+//                   controller: _tabController,
+//                   children: [
+//                     _buildOrdersList(activeOrders),
+//                     _buildOrdersList(cancelledOrders, showAccept: false),
+//                     _buildOrdersList(completedOrders, showAccept: false),
+//                   ],
+//                 );
+//               },
+//               loading: () => const Center(
+//                 child: CircularProgressIndicator(color: Color(0xFF5D8AA8)),
+//               ),
+//               error: (err, stack) => Center(
+//                 child: Column(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   children: [
+//                     Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+//                     const SizedBox(height: 16),
+//                     Text('Error: $err'),
+//                     const SizedBox(height: 16),
+//                     ElevatedButton(
+//                       onPressed: () {
+//                         ref.invalidate(realtimeOrdersProvider);
+//                       },
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: const Color(0xFF5D8AA8),
+//                         foregroundColor: Colors.white,
+//                       ),
+//                       child: const Text('Retry'),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildOrdersList(List<OrderData> orders, {bool showAccept = true}) {
+//     if (orders.isEmpty) {
+//       return Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+//             const SizedBox(height: 16),
+//             Text(
+//               showAccept ? 'No active orders' : 'No orders found',
+//               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+//             ),
+//           ],
+//         ),
+//       );
+//     }
+
+//     return RefreshIndicator(
+//       onRefresh: () async {
+//         ref.invalidate(realtimeOrdersProvider);
+//         await _fetchBalance();
+//       },
+//       child: ListView.builder(
+//         padding: const EdgeInsets.all(16),
+//         itemCount: orders.length,
+//         itemBuilder: (context, index) {
+//           final order = orders[index];
+//           final bool canShowAccept = showAccept && order.status == '1';
+
+//           return OrderCard(
+//             orderNumber: order.orderNumber,
+//             pickup: order.storeName,
+//             dropoff: order.customerAddress,
+//             orderTime: order.dateTimeCreated,
+//             storeImageUrl: order.storeImageUrl,
+//             deliveryFee: order.deliveryFee,
+//             subTotal: order.subTotal,
+//             showAccept: canShowAccept,
+//             isAccepting: false,
+//             orderStatusId: order.status,
+//             storeAddress: order.storeAddress,
+//             customerName: order.customerName,
+//             customerAddress: order.customerAddress,
+//             customerMobileNo: order.customerMobileNo,
+//             storeLat: order.storeLat,
+//             storeLng: order.storeLng,
+//             customerLat: order.customerLat,
+//             customerLng: order.customerLng,
+//             onTap: () {
+//               Navigator.push(
+//                 context,
+//                 MaterialPageRoute(
+//                   builder: (context) => OrderDetailsScreen(
+//                     order: order,
+//                     showAccept: canShowAccept,
+//                     onAccept: (newStatus) async {
+//                       ref.invalidate(realtimeOrdersProvider);
+//                       await _fetchBalance();
+//                     },
+//                   ),
+//                 ),
+//               );
+//             },
+//             onAccept: () async {
+//               final confirm = await showDialog<bool>(
+//                 context: context,
+//                 builder: (context) => AlertDialog(
+//                   title: const Text('Accept Order'),
+//                   content: const Text(
+//                     'Are you sure you want to accept this order?',
+//                   ),
+//                   actions: [
+//                     TextButton(
+//                       onPressed: () => Navigator.pop(context, false),
+//                       child: const Text('Cancel'),
+//                     ),
+//                     ElevatedButton(
+//                       onPressed: () => Navigator.pop(context, true),
+//                       child: const Text('Accept'),
+//                     ),
+//                   ],
+//                 ),
+//               );
+
+//               if (confirm == true) {
+//                 // Call API to accept
+//                 final success = await OrderService.acceptOrder(order);
+//                 if (success) {
+//                   ref.invalidate(realtimeOrdersProvider);
+//                   ScaffoldMessenger.of(context).showSnackBar(
+//                     const SnackBar(
+//                       content: Text('Order accepted!'),
+//                       backgroundColor: Colors.green,
+//                     ),
+//                   );
+//                 }
+//               }
+//             },
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
