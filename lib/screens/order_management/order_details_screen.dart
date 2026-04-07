@@ -5,7 +5,7 @@ import '../../services/orders/order_service.dart';
 import '../../widgets/common/address_button.dart';
 import '../../widgets/common/mobile_phone_button.dart';
 import '../../utils/order_helpers.dart';
-import '../chat/chat_screen.dart'; // Add this import
+import '../chat/chat_screen.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final OrderData order;
@@ -48,26 +48,33 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      final success = await OrderService.acceptOrder(widget.order);
+      final result = await OrderService.acceptOrder(widget.order);
 
       if (!mounted) return;
 
-      if (success) {
+      if (result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order accepted!'),
+          SnackBar(
+            content: Text(result.message ?? 'Order accepted!'),
             backgroundColor: Colors.green,
           ),
         );
 
         if (widget.onAccept != null) {
-          widget.onAccept!('3');
+          widget.onAccept!('4');
         }
 
         Navigator.pop(context, true);
       } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Failed to accept order'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
         setState(() {
-          _error = 'Failed to accept order';
+          _error = result.message;
           _isAccepting = false;
         });
       }
@@ -147,17 +154,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      final success = await OrderService.cancelOrder(
+      final result = await OrderService.cancelOrder(
         widget.order.serverHeaderId,
         reason,
       );
 
       if (!mounted) return;
 
-      if (success) {
+      if (result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order cancelled successfully'),
+          SnackBar(
+            content: Text(result.message ?? 'Order cancelled successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -168,8 +175,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
         Navigator.pop(context, true);
       } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Failed to cancel order'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
         setState(() {
-          _error = 'Failed to cancel order';
+          _error = result.message;
           _isCancelling = false;
         });
       }
@@ -252,7 +266,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     });
 
     try {
-      final success = await OrderService.pickupOrder(
+      final result = await OrderService.pickupOrder(
         widget.order.orderNumber,
         pin,
         widget.order.isPaid,
@@ -260,7 +274,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
       if (!mounted) return;
 
-      if (success) {
+      if (result.success) {
         setState(() {
           _isSubmittingPin = false;
           _isPickedUp = true;
@@ -269,8 +283,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         Navigator.pop(context); // Close dialog
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order picked up successfully!'),
+          SnackBar(
+            content: Text(result.message ?? 'Order picked up successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -283,7 +297,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       } else {
         setState(() {
           _isSubmittingPin = false;
-          _pinError = 'Invalid PIN';
+          _pinError = result.message ?? 'Invalid PIN';
         });
       }
     } catch (e) {
@@ -372,7 +386,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           widget.order.onlineServiceCharge +
           widget.order.deliveryFee;
 
-      final success = await OrderService.deliverOrder(
+      final result = await OrderService.deliverOrder(
         widget.order.serverHeaderId,
         widget.order.orderNumber,
         pin,
@@ -382,7 +396,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
       if (!mounted) return;
 
-      if (success) {
+      if (result.success) {
         setState(() {
           _isSubmittingPin = false;
           _isDelivered = true;
@@ -391,8 +405,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         Navigator.pop(context); // Close dialog
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order marked as delivered!'),
+          SnackBar(
+            content: Text(result.message ?? 'Order delivered successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -405,7 +419,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       } else {
         setState(() {
           _isSubmittingPin = false;
-          _pinError = 'Invalid PIN';
+          _pinError = result.message ?? 'Invalid PIN';
         });
       }
     } catch (e) {
@@ -419,15 +433,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
+    final availableActions = getAvailableActions(order);
 
-    final bool showAcceptButton = widget.showAccept && order.status == '1';
-    final bool showPickupButton = order.status == '4' && !_isPickedUp;
-    final bool showDeliveredButton = order.status == '6' && !_isDelivered;
-    final bool showCancelButton =
-        order.status != '1' &&
-        order.status != '7' &&
-        order.status != '8' &&
-        !_isDelivered;
+    final bool showAcceptButton =
+        widget.showAccept && availableActions.contains('accept');
+    final bool showPickupButton = availableActions.contains('pickup_pin');
+    final bool showDeliveredButton = availableActions.contains('delivery_pin');
+    final bool showCancelButton = availableActions.contains('cancel');
 
     return Scaffold(
       appBar: AppBar(
@@ -789,7 +801,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
             const SizedBox(height: 12),
 
-            // CHAT BUTTON - ADD THIS SECTION
+            // Chat Button
             if (order.OtherChatUserFirebaseUID != null &&
                 order.OtherChatUserName != null)
               SizedBox(

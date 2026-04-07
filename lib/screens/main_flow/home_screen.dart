@@ -8,6 +8,7 @@ import '../../services/orders/order_service.dart';
 import '../../services/database/user_session_db.dart';
 import '../../services/device/device_service.dart';
 import '../../services/dashboard/dashboard_service.dart';
+import '../../utils/order_helpers.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,10 @@ class _HomeScreenState extends State<HomeScreen>
   List<OrderData> _orders = [];
   bool _isLoading = true;
   String? _error;
+
+  // Track currently accepted order
+  int? _acceptedOrderId;
+  bool _isAcceptingOrder = false;
 
   double _balance = 0.0;
   bool _balanceLoading = false;
@@ -56,11 +61,11 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  bool _isBalanceLow() {
-    return _balance < 100;
-  }
+  bool _isBalanceLow() => _balance < 100;
 
   Future<void> _loadOrders() async {
+    if (_isAcceptingOrder) return;
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -112,60 +117,100 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _updateOrderStatus(int orderId, String newStatus) async {
+    setState(() {
+      final index = _orders.indexWhere((o) => o.serverHeaderId == orderId);
+      if (index != -1) {
+        _orders[index] = _orders[index].copyWith(status: newStatus);
+      }
+    });
+  }
+
   Future<void> _handleOrderAction(
     OrderData order,
     String action, {
     String? pin,
     String? reason,
   }) async {
-    bool success = false;
+    OrderActionResult? result;
 
     switch (action) {
       case 'accept':
-        success = await OrderService.acceptOrder(order);
+        result = await OrderService.acceptOrder(order);
+        if (result.success) {
+          await _updateOrderStatus(order.serverHeaderId, '4');
+          setState(() {
+            _acceptedOrderId = order.serverHeaderId;
+          });
+        }
         break;
       case 'cancel':
-        success = await OrderService.cancelOrder(
+        result = await OrderService.cancelOrder(
           order.serverHeaderId,
           reason ?? '',
         );
+        if (result.success) {
+          await _updateOrderStatus(order.serverHeaderId, '8');
+          setState(() {
+            _acceptedOrderId = null;
+          });
+        }
         break;
       case 'pickup':
-        success = await OrderService.pickupOrder(
+        result = await OrderService.pickupOrder(
           order.orderNumber,
           pin ?? '',
           order.isPaid,
         );
+        if (result.success) {
+          await _updateOrderStatus(order.serverHeaderId, '6');
+        }
         break;
       case 'deliver':
         final totalAmount =
             order.subTotal + order.onlineServiceCharge + order.deliveryFee;
-        success = await OrderService.deliverOrder(
+        result = await OrderService.deliverOrder(
           order.serverHeaderId,
           order.orderNumber,
           pin ?? '',
           order.deliveryFee,
           totalAmount,
         );
+        if (result.success) {
+          await _updateOrderStatus(order.serverHeaderId, '7');
+          setState(() {
+            _acceptedOrderId = null;
+          });
+        }
         break;
     }
 
-    if (success && mounted) {
+    if (result != null && mounted) {
       await _loadOrders();
       await _fetchBalance();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Order ${action}ed successfully!'),
-          backgroundColor: Colors.green,
+          content: Text(result.message ?? 'Order ${action}ed successfully!'),
+          backgroundColor: result.success ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 3),
         ),
       );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to $action order'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    }
+  }
+
+  String _getSuccessMessage(String action) {
+    switch (action) {
+      case 'accept':
+        return 'Order accepted! Ready for pickup.';
+      case 'pickup':
+        return 'Order picked up!';
+      case 'deliver':
+        return 'Order delivered!';
+      case 'cancel':
+        return 'Order cancelled.';
+      default:
+        return 'Order ${action}ed successfully!';
     }
   }
 
@@ -229,11 +274,7 @@ class _HomeScreenState extends State<HomeScreen>
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildOrdersList(
-                        _orders
-                            .where((o) => o.status != '7' && o.status != '8')
-                            .toList(),
-                      ),
+                      _buildOrdersList(_orders.where(isOrderActive).toList()),
                       _buildOrdersList(
                         _orders.where((o) => o.status == '8').toList(),
                         showAccept: false,
@@ -274,7 +315,13 @@ class _HomeScreenState extends State<HomeScreen>
         itemCount: orders.length,
         itemBuilder: (context, index) {
           final order = orders[index];
-          final bool canShowAccept = showAccept && order.status == '1';
+          final availableActions = getAvailableActions(order);
+          final bool canShowAccept =
+              showAccept &&
+              availableActions.contains('accept') &&
+              _acceptedOrderId == null; // Only show if no order accepted
+          final bool isAcceptingThisOrder =
+              _isAcceptingOrder && _acceptedOrderId == order.serverHeaderId;
 
           return OrderCard(
             orderNumber: order.orderNumber,
@@ -285,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen>
             deliveryFee: order.deliveryFee,
             subTotal: order.subTotal,
             showAccept: canShowAccept,
-            isAccepting: false,
+            isAccepting: isAcceptingThisOrder,
             orderStatusId: order.status,
             storeAddress: order.storeAddress,
             customerName: order.customerName,
@@ -305,12 +352,32 @@ class _HomeScreenState extends State<HomeScreen>
                     onAccept: (newStatus) async {
                       await _loadOrders();
                       await _fetchBalance();
+                      if (newStatus == '7' || newStatus == '8') {
+                        setState(() {
+                          _acceptedOrderId = null;
+                        });
+                      } else if (newStatus == '4') {
+                        setState(() {
+                          _acceptedOrderId = order.serverHeaderId;
+                        });
+                      }
                     },
                   ),
                 ),
               );
             },
             onAccept: () async {
+              // Prevent multiple simultaneous accepts
+              if (_isAcceptingOrder) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please wait, processing another order...'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -332,7 +399,15 @@ class _HomeScreenState extends State<HomeScreen>
               );
 
               if (confirm == true) {
+                setState(() {
+                  _isAcceptingOrder = true;
+                });
+
                 await _handleOrderAction(order, 'accept');
+
+                setState(() {
+                  _isAcceptingOrder = false;
+                });
               }
             },
           );
@@ -341,267 +416,3 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 }
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import '../../models/entities/order.dart';
-// import '../../widgets/cards/order_card.dart';
-// import '../../widgets/common/balance_warning_banner.dart';
-// import '../order_management/order_details_screen.dart';
-// import '../../services/orders/order_service.dart';
-// import '../../services/database/user_session_db.dart';
-// import '../../services/device/device_service.dart';
-// import '../../services/dashboard/dashboard_service.dart';
-// import '../../providers/order_providers.dart';
-
-// class HomeScreen extends ConsumerStatefulWidget {
-//   const HomeScreen({super.key});
-
-//   @override
-//   ConsumerState<HomeScreen> createState() => _HomeScreenState();
-// }
-
-// class _HomeScreenState extends ConsumerState<HomeScreen>
-//     with SingleTickerProviderStateMixin {
-//   late TabController _tabController;
-
-//   double _balance = 0.0;
-//   bool _balanceLoading = false;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _tabController = TabController(length: 3, vsync: this);
-//     _fetchBalance();
-//   }
-
-//   Future<void> _fetchBalance() async {
-//     if (_balanceLoading) return;
-//     _balanceLoading = true;
-
-//     try {
-//       final data = await DashboardService.fetchDashboardData();
-//       if (mounted) {
-//         setState(() {
-//           _balance = data['balance'];
-//           _balanceLoading = false;
-//         });
-//       }
-//     } catch (e) {
-//       print('[ERROR] Error fetching balance: $e');
-//       _balanceLoading = false;
-//     }
-//   }
-
-//   bool _isBalanceLow() => _balance < 100;
-
-//   void _navigateToDashboard() {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(
-//         content: Text('Go to Dashboard tab to top up'),
-//         backgroundColor: Color(0xFF5D8AA8),
-//       ),
-//     );
-//   }
-
-//   @override
-//   void dispose() {
-//     _tabController.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // Watch real-time orders from Firebase
-//     final ordersAsync = ref.watch(realtimeOrdersProvider);
-//     final newOrdersCount = ref.watch(newOrdersCountProvider);
-
-//     return Scaffold(
-//       body: Column(
-//         children: [
-//           if (_isBalanceLow())
-//             BalanceWarningBanner(
-//               balance: _balance,
-//               onTap: _navigateToDashboard,
-//             ),
-
-//           Container(
-//             color: Colors.white,
-//             child: TabBar(
-//               controller: _tabController,
-//               labelColor: const Color(0xFF5D8AA8),
-//               unselectedLabelColor: Colors.grey,
-//               indicatorColor: const Color(0xFF5D8AA8),
-//               tabs: [
-//                 Tab(
-//                   text: 'Active',
-//                   icon: newOrdersCount > 0
-//                       ? Badge(
-//                           label: Text('$newOrdersCount'),
-//                           child: const Icon(Icons.notifications_active),
-//                         )
-//                       : null,
-//                 ),
-//                 const Tab(text: 'Cancelled'),
-//                 const Tab(text: 'Completed'),
-//               ],
-//             ),
-//           ),
-
-//           Expanded(
-//             child: ordersAsync.when(
-//               data: (orders) {
-//                 final activeOrders = orders
-//                     .where((o) => o.status != '7' && o.status != '8')
-//                     .toList();
-//                 final cancelledOrders = orders
-//                     .where((o) => o.status == '8')
-//                     .toList();
-//                 final completedOrders = orders
-//                     .where((o) => o.status == '7')
-//                     .toList();
-
-//                 return TabBarView(
-//                   controller: _tabController,
-//                   children: [
-//                     _buildOrdersList(activeOrders),
-//                     _buildOrdersList(cancelledOrders, showAccept: false),
-//                     _buildOrdersList(completedOrders, showAccept: false),
-//                   ],
-//                 );
-//               },
-//               loading: () => const Center(
-//                 child: CircularProgressIndicator(color: Color(0xFF5D8AA8)),
-//               ),
-//               error: (err, stack) => Center(
-//                 child: Column(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-//                     const SizedBox(height: 16),
-//                     Text('Error: $err'),
-//                     const SizedBox(height: 16),
-//                     ElevatedButton(
-//                       onPressed: () {
-//                         ref.invalidate(realtimeOrdersProvider);
-//                       },
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: const Color(0xFF5D8AA8),
-//                         foregroundColor: Colors.white,
-//                       ),
-//                       child: const Text('Retry'),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildOrdersList(List<OrderData> orders, {bool showAccept = true}) {
-//     if (orders.isEmpty) {
-//       return Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
-//             const SizedBox(height: 16),
-//             Text(
-//               showAccept ? 'No active orders' : 'No orders found',
-//               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-//             ),
-//           ],
-//         ),
-//       );
-//     }
-
-//     return RefreshIndicator(
-//       onRefresh: () async {
-//         ref.invalidate(realtimeOrdersProvider);
-//         await _fetchBalance();
-//       },
-//       child: ListView.builder(
-//         padding: const EdgeInsets.all(16),
-//         itemCount: orders.length,
-//         itemBuilder: (context, index) {
-//           final order = orders[index];
-//           final bool canShowAccept = showAccept && order.status == '1';
-
-//           return OrderCard(
-//             orderNumber: order.orderNumber,
-//             pickup: order.storeName,
-//             dropoff: order.customerAddress,
-//             orderTime: order.dateTimeCreated,
-//             storeImageUrl: order.storeImageUrl,
-//             deliveryFee: order.deliveryFee,
-//             subTotal: order.subTotal,
-//             showAccept: canShowAccept,
-//             isAccepting: false,
-//             orderStatusId: order.status,
-//             storeAddress: order.storeAddress,
-//             customerName: order.customerName,
-//             customerAddress: order.customerAddress,
-//             customerMobileNo: order.customerMobileNo,
-//             storeLat: order.storeLat,
-//             storeLng: order.storeLng,
-//             customerLat: order.customerLat,
-//             customerLng: order.customerLng,
-//             onTap: () {
-//               Navigator.push(
-//                 context,
-//                 MaterialPageRoute(
-//                   builder: (context) => OrderDetailsScreen(
-//                     order: order,
-//                     showAccept: canShowAccept,
-//                     onAccept: (newStatus) async {
-//                       ref.invalidate(realtimeOrdersProvider);
-//                       await _fetchBalance();
-//                     },
-//                   ),
-//                 ),
-//               );
-//             },
-//             onAccept: () async {
-//               final confirm = await showDialog<bool>(
-//                 context: context,
-//                 builder: (context) => AlertDialog(
-//                   title: const Text('Accept Order'),
-//                   content: const Text(
-//                     'Are you sure you want to accept this order?',
-//                   ),
-//                   actions: [
-//                     TextButton(
-//                       onPressed: () => Navigator.pop(context, false),
-//                       child: const Text('Cancel'),
-//                     ),
-//                     ElevatedButton(
-//                       onPressed: () => Navigator.pop(context, true),
-//                       child: const Text('Accept'),
-//                     ),
-//                   ],
-//                 ),
-//               );
-
-//               if (confirm == true) {
-//                 // Call API to accept
-//                 final success = await OrderService.acceptOrder(order);
-//                 if (success) {
-//                   ref.invalidate(realtimeOrdersProvider);
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     const SnackBar(
-//                       content: Text('Order accepted!'),
-//                       backgroundColor: Colors.green,
-//                     ),
-//                   );
-//                 }
-//               }
-//             },
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
