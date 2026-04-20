@@ -87,7 +87,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       appBar: AppBar(
         title: const Text('Login with Email'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF5D8AA8),
+        foregroundColor: const Color(0xFF00509D),
         elevation: 0,
       ),
       body: SafeArea(
@@ -106,7 +106,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF5D8AA8),
+                    color: Color(0xFF00509D),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -142,7 +142,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.email,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     filled: true,
                     fillColor: Colors.grey[50],
@@ -169,7 +169,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.lock,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -206,7 +206,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     child: const Text(
                       'Forgot Password?',
                       style: TextStyle(
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -221,7 +221,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5D8AA8),
+                      backgroundColor: const Color(0xFF00509D),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -243,7 +243,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                   },
                   child: const Text(
                     '← Back to Phone Login',
-                    style: TextStyle(color: Color(0xFF5D8AA8)),
+                    style: TextStyle(color: Color(0xFF00509D)),
                   ),
                 ),
               ],

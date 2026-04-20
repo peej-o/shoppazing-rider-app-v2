@@ -64,7 +64,7 @@ class OrderCard extends StatelessWidget {
             // Header with order number and status
             Container(
               decoration: const BoxDecoration(
-                color: Color(0xFF5D8AA8),
+                color: Color(0xFF00509D),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -120,7 +120,7 @@ class OrderCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.store, color: Color(0xFF5D8AA8), size: 24),
+                      const Icon(Icons.store, color: Color(0xFF00509D), size: 24),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -152,7 +152,7 @@ class OrderCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.person, color: Color(0xFF5D8AA8), size: 24),
+                      const Icon(Icons.person, color: Color(0xFF00509D), size: 24),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -227,8 +227,8 @@ class OrderCard extends StatelessWidget {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isAccepting
-                              ? const Color(0xFF5D8AA8).withOpacity(0.7)
-                              : const Color(0xFF5D8AA8),
+                              ? const Color(0xFF00509D).withOpacity(0.7)
+                              : const Color(0xFF00509D),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: const RoundedRectangleBorder(

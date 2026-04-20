@@ -102,7 +102,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (url.isEmpty) {
       return const CircleAvatar(
         radius: 50,
-        backgroundColor: Color(0xFF5D8AA8),
+        backgroundColor: Color(0xFF00509D),
         child: Icon(Icons.person, size: 50, color: Colors.white),
       );
     }
@@ -187,7 +187,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   style: TextStyle(fontSize: 13),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5D8AA8),
+                  backgroundColor: const Color(0xFF00509D),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -216,7 +216,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF5D8AA8),
+                    color: Color(0xFF00509D),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -250,7 +250,7 @@ class _AccountScreenState extends State<AccountScreen> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(color: Color(0xFF5D8AA8)),
+                child: CircularProgressIndicator(color: Color(0xFF00509D)),
               ),
             )
           else if (_riderInfoError != null)
@@ -368,7 +368,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Change Password coming soon'),
-                      backgroundColor: Color(0xFF5D8AA8),
+                      backgroundColor: Color(0xFF00509D),
                     ),
                   );
                 },
@@ -384,7 +384,7 @@ class _AccountScreenState extends State<AccountScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5D8AA8),
+                  backgroundColor: const Color(0xFF00509D),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -473,7 +473,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   context: context,
                   barrierDismissible: false,
                   builder: (context) => const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF5D8AA8)),
+                    child: CircularProgressIndicator(color: Color(0xFF00509D)),
                   ),
                 );
 

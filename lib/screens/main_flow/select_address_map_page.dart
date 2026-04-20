@@ -109,7 +109,7 @@ class _SelectAddressMapPageState extends State<SelectAddressMapPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Address'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -186,7 +186,7 @@ class _SelectAddressMapPageState extends State<SelectAddressMapPage> {
                               ? null
                               : _confirmSelection,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5D8AA8),
+                            backgroundColor: const Color(0xFF00509D),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),

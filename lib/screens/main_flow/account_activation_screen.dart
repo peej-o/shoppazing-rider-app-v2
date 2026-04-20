@@ -243,7 +243,7 @@ class _AccountActivationScreenState extends State<AccountActivationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Profile' : 'Activate your Account'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(

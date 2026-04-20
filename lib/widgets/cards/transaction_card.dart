@@ -67,7 +67,7 @@ class TransactionCard extends StatelessWidget {
                           const Icon(
                             Icons.receipt_long,
                             size: 16,
-                            color: Color(0xFF5D8AA8),
+                            color: Color(0xFF00509D),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -131,10 +131,10 @@ class TransactionCard extends StatelessWidget {
                     horizontal: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5D8AA8).withOpacity(0.1),
+                    color: const Color(0xFF00509D).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFF5D8AA8).withOpacity(0.3),
+                      color: const Color(0xFF00509D).withOpacity(0.3),
                     ),
                   ),
                   child: Row(
@@ -153,7 +153,7 @@ class TransactionCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF5D8AA8),
+                          color: Color(0xFF00509D),
                         ),
                       ),
                     ],

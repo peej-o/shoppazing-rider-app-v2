@@ -235,7 +235,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             ElevatedButton(
               onPressed: _isSubmittingPin ? null : _submitPickupPin,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5D8AA8),
+                backgroundColor: const Color(0xFF00509D),
                 foregroundColor: Colors.white,
               ),
               child: _isSubmittingPin
@@ -444,7 +444,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Order Details'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -468,7 +468,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -522,7 +522,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -537,7 +537,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           ),
                           child: const Icon(
                             Icons.store,
-                            color: Color(0xFF5D8AA8),
+                            color: Color(0xFF00509D),
                             size: 24,
                           ),
                         ),
@@ -588,7 +588,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -597,7 +597,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       children: [
                         const Icon(
                           Icons.person,
-                          color: Color(0xFF5D8AA8),
+                          color: Color(0xFF00509D),
                           size: 28,
                         ),
                         const SizedBox(width: 12),
@@ -661,7 +661,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -706,7 +706,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: _isAccepting ? null : _acceptOrder,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5D8AA8),
+                    backgroundColor: const Color(0xFF00509D),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -733,11 +733,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   onPressed: _showPickupPinDialog,
                   icon: const Icon(
                     Icons.qr_code_scanner,
-                    color: Color(0xFF5D8AA8),
+                    color: Color(0xFF00509D),
                   ),
                   label: const Text('Pickup via PIN'),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF5D8AA8)),
+                    side: const BorderSide(color: Color(0xFF00509D)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -820,10 +820,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.chat, color: Color(0xFF5D8AA8)),
+                  icon: const Icon(Icons.chat, color: Color(0xFF00509D)),
                   label: const Text('Chat with Customer'),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF5D8AA8)),
+                    side: const BorderSide(color: Color(0xFF00509D)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -896,14 +896,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5D8AA8).withOpacity(0.1),
+                  color: const Color(0xFF00509D).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFF5D8AA8)),
+                  border: Border.all(color: const Color(0xFF00509D)),
                 ),
                 child: Text(
                   'x$qty',
                   style: const TextStyle(
-                    color: Color(0xFF5D8AA8),
+                    color: Color(0xFF00509D),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -922,7 +922,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ).format(price),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D8AA8),
+                  color: Color(0xFF00509D),
                 ),
               ),
             ],
@@ -943,7 +943,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? const Color(0xFF5D8AA8) : Colors.grey,
+              color: isTotal ? const Color(0xFF00509D) : Colors.grey,
             ),
           ),
           Text(
@@ -951,7 +951,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             style: TextStyle(
               fontSize: isTotal ? 18 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-              color: isTotal ? const Color(0xFF5D8AA8) : Colors.black,
+              color: isTotal ? const Color(0xFF00509D) : Colors.black,
             ),
           ),
         ],

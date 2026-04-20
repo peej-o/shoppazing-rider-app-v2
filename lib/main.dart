@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'screens/splash/splash_screen.dart';
+import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/phone_number_screen.dart';
 import 'screens/auth/email_login_screen.dart';
 import 'screens/auth/otp_screen.dart';
@@ -22,29 +24,31 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Shoppazing Rider App',
       theme: ThemeData(
-        primaryColor: const Color(0xFF5D8AA8),
+        primaryColor: const Color(0xFF00509D),
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           elevation: 0,
           titleTextStyle: TextStyle(
-            color: Color(0xFF5D8AA8),
+            color: Color(0xFF00509D),
             fontSize: 20,
             fontWeight: FontWeight.w500,
           ),
-          iconTheme: IconThemeData(color: Color(0xFF5D8AA8)),
+          iconTheme: IconThemeData(color: Color(0xFF00509D)),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          selectedItemColor: Color(0xFF5D8AA8),
+          selectedItemColor: Color(0xFF00509D),
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
         ),
-        colorScheme: const ColorScheme.light(primary: Color(0xFF5D8AA8)),
+        colorScheme: const ColorScheme.light(primary: Color(0xFF00509D)),
       ),
-      initialRoute: '/',
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/': (context) => const StartupPage(),
-        '/login': (context) => const PhoneNumberScreen(),
+        '/login': (context) => const WelcomeScreen(),
+        '/phone_login': (context) => const PhoneNumberScreen(),
         '/email_login': (context) => const EmailLoginScreen(),
         '/otp': (context) => const OTPScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -84,7 +88,7 @@ class _StartupPageState extends State<StartupPage> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF5D8AA8))),
+      body: Center(child: CircularProgressIndicator(color: Color(0xFF00509D))),
     );
   }
 }
@@ -114,24 +118,24 @@ class _StartupPageState extends State<StartupPage> {
 //     return MaterialApp(
 //       title: 'Shoppazing Rider App',
 //       theme: ThemeData(
-//         primaryColor: const Color(0xFF5D8AA8),
+//         primaryColor: const Color(0xFF00509D),
 //         scaffoldBackgroundColor: Colors.white,
 //         appBarTheme: const AppBarTheme(
 //           backgroundColor: Colors.white,
 //           elevation: 0,
 //           titleTextStyle: TextStyle(
-//             color: Color(0xFF5D8AA8),
+//             color: Color(0xFF00509D),
 //             fontSize: 20,
 //             fontWeight: FontWeight.w500,
 //           ),
-//           iconTheme: IconThemeData(color: Color(0xFF5D8AA8)),
+//           iconTheme: IconThemeData(color: Color(0xFF00509D)),
 //         ),
 //         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-//           selectedItemColor: Color(0xFF5D8AA8),
+//           selectedItemColor: Color(0xFF00509D),
 //           unselectedItemColor: Colors.grey,
 //           type: BottomNavigationBarType.fixed,
 //         ),
-//         colorScheme: const ColorScheme.light(primary: Color(0xFF5D8AA8)),
+//         colorScheme: const ColorScheme.light(primary: Color(0xFF00509D)),
 //       ),
 //       initialRoute: '/',
 //       routes: {
@@ -182,7 +186,7 @@ class _StartupPageState extends State<StartupPage> {
 //   @override
 //   Widget build(BuildContext context) {
 //     return const Scaffold(
-//       body: Center(child: CircularProgressIndicator(color: Color(0xFF5D8AA8))),
+//       body: Center(child: CircularProgressIndicator(color: Color(0xFF00509D))),
 //     );
 //   }
 // }

@@ -88,7 +88,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF5D8AA8),
+                color: Color(0xFF00509D),
               ),
             ),
           ),
@@ -105,9 +105,9 @@ class _TopUpSheetState extends State<TopUpSheet> {
                 label: Text('₱$amount'),
                 selected: selected,
                 onSelected: (_) => _selectPreset(amount),
-                selectedColor: const Color(0xFF5D8AA8),
+                selectedColor: const Color(0xFF00509D),
                 labelStyle: TextStyle(
-                  color: selected ? Colors.white : const Color(0xFF5D8AA8),
+                  color: selected ? Colors.white : const Color(0xFF00509D),
                   fontWeight: FontWeight.bold,
                 ),
                 backgroundColor: Colors.grey[100],
@@ -139,7 +139,7 @@ class _TopUpSheetState extends State<TopUpSheet> {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5D8AA8),
+                backgroundColor: const Color(0xFF00509D),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(

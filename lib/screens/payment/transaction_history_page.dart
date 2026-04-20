@@ -58,7 +58,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transaction History'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
       ),
       body: RefreshIndicator(
@@ -107,7 +107,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _handleRefresh,
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.refresh),
         label: const Text('Refresh'),
@@ -175,7 +175,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5D8AA8),
+              backgroundColor: const Color(0xFF00509D),
               foregroundColor: Colors.white,
             ),
             child: const Text('Resume Payment'),

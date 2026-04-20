@@ -48,7 +48,7 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Location'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
       ),
       body: isLoading

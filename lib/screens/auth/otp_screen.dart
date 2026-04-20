@@ -264,7 +264,7 @@ class _OTPScreenState extends State<OTPScreen> {
       appBar: AppBar(
         title: const Text('Verify OTP'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF5D8AA8),
+        foregroundColor: const Color(0xFF00509D),
         elevation: 0,
       ),
       body: SafeArea(
@@ -281,7 +281,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D8AA8),
+                  color: Color(0xFF00509D),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -312,8 +312,8 @@ class _OTPScreenState extends State<OTPScreen> {
                   activeFillColor: Colors.white,
                   selectedFillColor: Colors.white,
                   inactiveFillColor: Colors.white,
-                  activeColor: const Color(0xFF5D8AA8),
-                  selectedColor: const Color(0xFF5D8AA8),
+                  activeColor: const Color(0xFF00509D),
+                  selectedColor: const Color(0xFF00509D),
                   inactiveColor: Colors.grey,
                 ),
                 animationDuration: const Duration(milliseconds: 300),
@@ -345,7 +345,7 @@ class _OTPScreenState extends State<OTPScreen> {
                     child: const Text(
                       'Resend OTP',
                       style: TextStyle(
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -361,7 +361,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _verifyOTP,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5D8AA8),
+                    backgroundColor: const Color(0xFF00509D),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

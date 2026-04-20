@@ -216,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (_isLoading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF5D8AA8)),
+          child: CircularProgressIndicator(color: Color(0xFF00509D)),
         ),
       );
     }
@@ -239,7 +239,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ElevatedButton(
                 onPressed: _refreshDashboard,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5D8AA8),
+                  backgroundColor: const Color(0xFF00509D),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
@@ -261,7 +261,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: _refreshDashboard,
-        color: const Color(0xFF5D8AA8),
+        color: const Color(0xFF00509D),
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
@@ -288,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             style: TextStyle(fontSize: 14),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5D8AA8),
+                            backgroundColor: const Color(0xFF00509D),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -367,13 +367,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF5D8AA8),
+                            color: Color(0xFF00509D),
                           ),
                         ),
                         TextButton(
                           onPressed: _showTransactionHistory,
                           style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFF5D8AA8),
+                            foregroundColor: const Color(0xFF00509D),
                           ),
                           child: const Text('View All'),
                         ),

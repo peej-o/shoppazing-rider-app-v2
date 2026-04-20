@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/auth/auth_service.dart';
-import '../../services/auth/google_signin_service.dart';
 import '../../services/network/network_service.dart';
 
 class PhoneNumberScreen extends StatefulWidget {
@@ -88,54 +87,6 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen> {
     }
   }
 
-  Future<void> _loginWithGoogle() async {
-    // Check internet
-    final hasConnection = await NetworkService.hasInternetConnection();
-    if (!hasConnection) {
-      NetworkService.showNetworkErrorSnackBar(context);
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      print('[DEBUG] Starting Google Sign-In...');
-
-      final googleService = GoogleSignInService();
-      final result = await googleService.signInWithGoogle();
-
-      if (!mounted) return;
-
-      if (result.success) {
-        print('[DEBUG] Google Sign-In successful');
-        print('[DEBUG] Email: ${result.userData?.email}');
-
-        // TODO: Send ID token to your backend
-        // await AuthService.loginWithGoogle(result.userData!.idToken);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google Sign-In successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navigate to home or registration if incomplete profile
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        print('[DEBUG] Google Sign-In failed: ${result.error}');
-        _showError(result.error ?? 'Google Sign-In failed');
-      }
-    } catch (e) {
-      print('[ERROR] Google Sign-In error: $e');
-      _showError('Error: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -144,159 +95,86 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const brandBlue = Color(0xFF00509D);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF2F4F7),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF223044),
+        elevation: 0,
+        title: const Text(
+          'Enter Phone Number',
+          style: TextStyle(
+            color: Color(0xFF223044),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-
-                // Logo
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        'assets/shoppazing_logo.jpg',
-                        height: 80,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.local_shipping,
-                            size: 80,
-                            color: Color(0xFF5D8AA8),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Shoppazing Rider App',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF5D8AA8),
-                        ),
-                      ),
-                      const Text(
-                        'Your trusted delivery partner',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter your mobile number to receive an OTP code.',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Color.fromARGB(255, 35, 40, 48),
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                maxLength: 10,
+                enabled: !_isLoading,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixText: '+63 ',
+                  counterText: '',
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: brandBlue),
                   ),
                 ),
-
-                const SizedBox(height: 40),
-
-                // Title
-                const Text(
-                  'Enter your phone number',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF5D8AA8),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'We will send you a verification code',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Phone Input
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  maxLength: 10,
-                  enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    prefixText: '+63 ',
-                    counterText: '',
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF5D8AA8)),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _loginWithOTP,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: brandBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Continue Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _loginWithOTP,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5D8AA8),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Continue',
-                            style: TextStyle(fontSize: 16),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
                           ),
-                  ),
+                        )
+                      : const Text(
+                          'Continue',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Email Login Link
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/email_login');
-                    },
-                    child: const Text(
-                      'Login with Email',
-                      style: TextStyle(
-                        color: Color(0xFF5D8AA8),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Google Sign-In Button
-                Center(
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _loginWithGoogle,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 20,
-                      ),
-                      side: const BorderSide(color: Colors.grey),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      foregroundColor: const Color(0xFF2F4F4F),
-                    ),
-                    icon: Image.asset(
-                      'assets/images/google.png',
-                      width: 20,
-                      height: 20,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.g_mobiledata, size: 20);
-                      },
-                    ),
-                    label: const Text('Sign in with Google'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

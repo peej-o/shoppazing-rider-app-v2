@@ -145,11 +145,11 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Color(0xFF5D8AA8)),
+        iconTheme: const IconThemeData(color: Color(0xFF00509D)),
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: const Color(0xFF5D8AA8),
+              backgroundColor: const Color(0xFF00509D),
               child: const Icon(Icons.person, color: Colors.white),
             ),
             const SizedBox(width: 12),
@@ -160,7 +160,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Text(
                     widget.customerName,
                     style: const TextStyle(
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -256,7 +256,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? const Color(0xFF5D8AA8) : Colors.grey[200],
+        color: isMe ? const Color(0xFF00509D) : Colors.grey[200],
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(16),
           topRight: const Radius.circular(16),
@@ -315,7 +315,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Text(
                 message.text,
                 style: TextStyle(
-                  color: isMe ? const Color(0xFF5D8AA8) : Colors.black87,
+                  color: isMe ? const Color(0xFF00509D) : Colors.black87,
                 ),
               ),
             ),
@@ -349,7 +349,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.image, color: Color(0xFF5D8AA8)),
+                  : const Icon(Icons.image, color: Color(0xFF00509D)),
               onPressed: _isUploading ? null : _pickAndSendImage,
             ),
           ),
@@ -379,7 +379,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
           // Send button
           CircleAvatar(
-            backgroundColor: const Color(0xFF5D8AA8),
+            backgroundColor: const Color(0xFF00509D),
             child: IconButton(
               icon: const Icon(Icons.send, color: Colors.white),
               onPressed: _sendMessage,

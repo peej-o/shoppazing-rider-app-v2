@@ -30,13 +30,13 @@ class InfoCard extends StatelessWidget {
                   width: 4,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5D8AA8),
+                    color: const Color(0xFF00509D),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 12),
                 if (icon != null) ...[
-                  Icon(icon, color: const Color(0xFF5D8AA8), size: 20),
+                  Icon(icon, color: const Color(0xFF00509D), size: 20),
                   const SizedBox(width: 8),
                 ],
                 Text(
@@ -44,7 +44,7 @@ class InfoCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF5D8AA8),
+                    color: Color(0xFF00509D),
                   ),
                 ),
               ],

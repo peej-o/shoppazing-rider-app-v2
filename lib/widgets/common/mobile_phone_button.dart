@@ -77,7 +77,7 @@ class MobilePhoneButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D8AA8),
+                  color: Color(0xFF00509D),
                 ),
               ),
             ),
@@ -174,18 +174,18 @@ class MobilePhoneButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF5D8AA8).withOpacity(0.1),
+          color: const Color(0xFF00509D).withOpacity(0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.phone, size: 14, color: Color(0xFF5D8AA8)),
+            const Icon(Icons.phone, size: 14, color: Color(0xFF00509D)),
             const SizedBox(width: 4),
             Text(
               mobileNumber,
               style: const TextStyle(
-                color: Color(0xFF5D8AA8),
+                color: Color(0xFF00509D),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 decoration: TextDecoration.underline,

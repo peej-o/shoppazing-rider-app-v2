@@ -102,7 +102,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('GCash Payment'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -163,7 +163,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(color: Color(0xFF5D8AA8)),
+                    const CircularProgressIndicator(color: Color(0xFF00509D)),
                     const SizedBox(height: 16),
                     Text(
                       'Loading payment page...',
@@ -175,7 +175,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
                         value: _loadingProgress,
                         backgroundColor: Colors.grey[200],
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF5D8AA8),
+                          Color(0xFF00509D),
                         ),
                       ),
                     ],

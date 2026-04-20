@@ -44,6 +44,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.7
+
+flutter_native_splash:
+  color: "#00509D"
+  image: assets/shoppazing_logo.jpg
+  android: true
+  ios: true
 
 flutter:
   uses-material-design: true

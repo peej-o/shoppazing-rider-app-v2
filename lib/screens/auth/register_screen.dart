@@ -125,7 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: const Color(0xFF5D8AA8),
+        backgroundColor: const Color(0xFF00509D),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -145,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF5D8AA8),
+                    color: Color(0xFF00509D),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -171,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.person,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     filled: true,
                     fillColor: Colors.grey[50],
@@ -200,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.person,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     filled: true,
                     fillColor: Colors.grey[50],
@@ -230,7 +230,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.email,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     filled: true,
                     fillColor: Colors.grey[50],
@@ -261,7 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.phone,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     filled: true,
                     fillColor: Colors.grey[100],
@@ -283,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.lock,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -330,7 +330,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     prefixIcon: const Icon(
                       Icons.lock,
-                      color: Color(0xFF5D8AA8),
+                      color: Color(0xFF00509D),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -367,7 +367,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _register,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5D8AA8),
+                      backgroundColor: const Color(0xFF00509D),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -398,7 +398,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         },
                   child: const Text(
                     '← Back to Login',
-                    style: TextStyle(color: Color(0xFF5D8AA8)),
+                    style: TextStyle(color: Color(0xFF00509D)),
                   ),
                 ),
               ],

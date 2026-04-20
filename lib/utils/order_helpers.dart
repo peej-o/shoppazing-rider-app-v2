@@ -134,9 +134,9 @@ IconData getButtonIcon(String action) {
 Color getButtonColor(String action) {
   switch (action) {
     case 'accept':
-      return const Color(0xFF5D8AA8);
+      return const Color(0xFF00509D);
     case 'pickup_pin':
-      return const Color(0xFF5D8AA8);
+      return const Color(0xFF00509D);
     case 'delivery_pin':
       return Colors.green;
     case 'cancel':

@@ -24,12 +24,12 @@ class SettingsTile extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (iconColor ?? const Color(0xFF5D8AA8)).withOpacity(0.1),
+              color: (iconColor ?? const Color(0xFF00509D)).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: iconColor ?? const Color(0xFF5D8AA8),
+              color: iconColor ?? const Color(0xFF00509D),
               size: 20,
             ),
           ),

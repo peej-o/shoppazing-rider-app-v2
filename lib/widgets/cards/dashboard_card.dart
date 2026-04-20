@@ -34,7 +34,7 @@ class DashboardCard extends StatelessWidget {
             // Header with icon and label
             Container(
               decoration: BoxDecoration(
-                color: color ?? const Color(0xFF5D8AA8).withOpacity(0.1),
+                color: color ?? const Color(0xFF00509D).withOpacity(0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -56,14 +56,14 @@ class DashboardCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(icon, color: const Color(0xFF5D8AA8), size: 18),
+                    child: Icon(icon, color: const Color(0xFF00509D), size: 18),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
                       label,
                       style: const TextStyle(
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                       ),
@@ -82,7 +82,7 @@ class DashboardCard extends StatelessWidget {
                     child: Text(
                       value,
                       style: const TextStyle(
-                        color: Color(0xFF5D8AA8),
+                        color: Color(0xFF00509D),
                         fontWeight: FontWeight.w800,
                         fontSize: 20,
                       ),

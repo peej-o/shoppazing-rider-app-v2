@@ -218,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Go to Dashboard tab to top up'),
-        backgroundColor: Color(0xFF5D8AA8),
+        backgroundColor: Color(0xFF00509D),
       ),
     );
   }
@@ -242,9 +242,9 @@ class _HomeScreenState extends State<HomeScreen>
 
           TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFF5D8AA8),
+            labelColor: const Color(0xFF00509D),
             unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF5D8AA8),
+            indicatorColor: const Color(0xFF00509D),
             tabs: const [
               Tab(text: 'Active'),
               Tab(text: 'Cancelled'),
